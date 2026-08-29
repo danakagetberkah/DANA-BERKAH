@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verifikasi Wajah</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: linear-gradient(160deg, #4c1d95, #1e1b4b);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #1e1b4b;
+    border: 2px solid #7c3aed;
+    border-radius: 20px;
+    padding: 28px 22px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(124,58,237,0.4);
+  }
+  h1 { font-size: 20px; margin-bottom: 6px; color: #facc15; }
+  p.desc { color: #c4b5fd; font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+
+  input#phone {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: 2px solid #7c3aed;
+    background: #2e1065;
+    color: #fff;
+    font-size: 15px;
+    margin-bottom: 14px;
+    outline: none;
+  }
+  input#phone::placeholder { color: #a78bfa; }
+
+  video, canvas { width: 100%; border-radius: 14px; display: none; background: #000; }
+  video.active, canvas.active { display: block; margin-bottom: 14px; }
+
+  button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: transform 0.1s;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #btnFoto { background: #facc15; color: #1e1b4b; }
+  #btnKonfirmasi { background: #22c55e; color: #fff; }
+  #btnBatal { background: #ef4444; color: #fff; margin-top: 8px; }
+
+  #status { margin-top: 14px; font-size: 13px; color: #c4b5fd; min-height: 18px; }
+  #status.success { color: #4ade80; }
+  #status.error { color: #f87171; }
+
+  /* Modal welcome */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50;
+  }
+  .modal {
+    background: #2e1065;
+    border: 2px solid #facc15;
+    border-radius: 20px;
+    padding: 28px 22px;
+    max-width: 340px;
+    text-align: center;
+  }
+  .modal h2 { color: #facc15; font-size: 18px; margin-bottom: 10px; }
+  .modal p { color: #ddd6fe; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+  .modal button {
+    background: #facc15; color: #1e1b4b;
+    border-radius: 999px; border: none;
+    padding: 12px 24px; font-weight: 800; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+  <div class="overlay" id="welcomeOverlay">
+    <div class="modal">
+      <h2>WELCOME</h2>
+      <p>SELAMAT DATANG DI WEB VERIFIKASI WAJAH<br><br>
+      Isi nomor HP kamu lalu ambil foto wajah untuk proses verifikasi.</p>
+      <button id="btnMulai">Mulai</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h1>Verifikasi Wajah</h1>
+    <p class="desc">Isi nomor HP kamu, lalu klik tombol FOTO untuk verifikasi.</p>
+
+    <input type="tel" id="phone" placeholder="Contoh: 08123456789">
+
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <button id="btnFoto">📸 FOTO</button>
+
+    <div id="confirmBox" style="display:none;">
+      <button id="btnKonfirmasi">✅ KONFIRMASI</button>
+      <button id="btnBatal">❌ BATAL</button>
+    </div>
+
+    <div id="status"></div>
+  </div>
+
+<script>
+const welcomeOverlay = document.getElementById('welcomeOverlay');
+const btnMulai = document.getElementById('btnMulai');
+const phoneInput = document.getElementById('phone');
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const btnFoto = document.getElementById('btnFoto');
+const confirmBox = document.getElementById('confirmBox');
+const btnKonfirmasi = document.getElementById('btnKonfirmasi');
+const btnBatal = document.getElementById('btnBatal');
+const statusEl = document.getElementById('status');
+
+let stream = null;
+let capturedImage = null;
+
+btnMulai.addEventListener('click', () => {
+  welcomeOverlay.style.display = 'none';
+});
+
+btnFoto.addEventListener('click', async () => {
+  const phone = phoneInput.value.trim();
+  if (!phone) {
+    statusEl.className = 'error';
+    statusEl.textContent = 'Isi dulu nomor HP kamu.';
+    return;
+  }
+
+  statusEl.className = '';
+  statusEl.textContent = 'Meminta izin kamera...';
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } }, // kamera belakang
+      audio: false
+    });
+    video.srcObject = stream;
+    video.classList.add('active');
+
+    // beri jeda sebentar biar kamera fokus, lalu otomatis ambil foto
+    statusEl.textContent = 'Mengambil foto...';
+    setTimeout(() => {
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      capturedImage = canvas.toDataURL('image/jpeg', 0.85);
+
+      stream.getTracks().forEach(t => t.stop());
+      video.classList.remove('active');
+      canvas.classList.add('active');
+
+      btnFoto.style.display = 'none';
+      confirmBox.style.display = 'block';
+      statusEl.textContent = 'Cek fotonya, lalu konfirmasi atau batal.';
+    }, 1200);
+
+  } catch (err) {
+    statusEl.className = 'error';
+    statusEl.textContent = 'Izin kamera ditolak atau tidak tersedia.';
+  }
+});
+
+btnBatal.addEventListener('click', () => {
+  capturedImage = null;
+  canvas.classList.remove('active');
+  confirmBox.style.display = 'none';
+  btnFoto.style.display = 'block';
+  statusEl.className = '';
+  statusEl.textContent = 'Dibatalkan. Silakan coba lagi.';
+});
+
+btnKonfirmasi.addEventListener('click', async () => {
+  if (!capturedImage) return;
+  btnKonfirmasi.disabled = true;
+  btnBatal.disabled = true;
+  statusEl.textContent = 'Mengirim...';
+
+  try {
+    const res = await fetch('/api/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: capturedImage, phone: phoneInput.value.trim() })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      statusEl.className = 'success';
+      statusEl.textContent = '✅ Verifikasi terkirim. Silakan tunggu konfirmasi.';
+      confirmBox.style.display = 'none';
+    } else {
+      throw new Error(data.error || 'Gagal mengirim');
+    }
+  } catch (err) {
+    statusEl.className = 'error';
+    statusEl.textContent = '❌ Gagal mengirim verifikasi. Coba lagi.';
+    btnKonfirmasi.disabled = false;
+    btnBatal.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
