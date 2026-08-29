@@ -10,10 +10,11 @@ const PORT = process.env.PORT || 3000;
 // ===== FIREBASE CONFIG =====
 // Service account key (copy paste dari file JSON Anda)
 const serviceAccount = {
+  {
   "type": "service_account",
   "project_id": "nampung",
-  "private_key_id": "8eb3e9859f0769d3cd3df7ca8c490dbd675ff5c5",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCypES+KB2FkCcc\neMInRJwgwn+NHAzMHqf2nkfDs/YTEh5+3DzEwb/W4sqj0luOut44a4Zfe2sZVC2v\nxZHdYoYY9GOgs5B2wIaSVnthVEUJKAetDJHunjc9TF/EfKcDMMkaeMFnv1/XkNKX\nNonC0sQsh0JEAkHvPiMsju1cUjMyOJnpQtMDTSr2EkeXmurZkG1o7ydNlHQxgybN\nQblUGEynr5/hKoiCJfYGZokTXz1BDe9eeVixbKRAaykj3T/QFxkgC9Xr3VMj6SKa\namd8LwTWGBzj/5sauGYJK55rPNLpd4dCN+GpQC8Yx0qXXkO/ajEvxchtp+O8aYyH\nK+UuLJhfAgMBAAECggEAP99lJtqAB7ftjAwPW2v4KOxyH7mWR8t0QcUBItOvGc2C\nMti7L5yY45POYXm+u89L0j972Zruxa0n8q+BAneOO9Dx6E0by6H128/pKHkxf98c\ns36JlRhj5tpuaXoqWwUv+nOPr3EpKxHAgkmBQzQJ6WPpSRjHi2ubtvxZmQdY/8zM\no55xIV8WLQNdMW36c7gPewTRwEGAeHdcKmaMvSa/jVy++zn8e+aMota86rAvbhT/\nObsl2BBEijvGTjIpAOl2WhWkIMzS9TvzPDlkXyQ5PRz5n3m83g9LlOAcfWAv+ZU4\nSQlesF3QTiiwWMAO/00qSQkpJvZmQ57AEtAsn3YkpQKBgQDoViBQNgAdim2ZByt+\nCwkf6F4AzqQjxIwIWI8CWsO9BCQAZLgEvXp/H+is5X/Q8389nuTA7ZPaFi43/Xk1\n6yS3SmYu+HYBAjsjO1HI6k5vU4KVsD5SucMZEq4a0Q/jj4dSTizcTYymGvS4Y97n\n6pe17h0Zz7sJEySZkhhYpv7Q0wKBgQDE1h7b+UyOCK8phDEhycERBUOiczakMB1r\nqlkxnD0R83VgPdpX9dIr25cBskm+bFmta2kBuWmIq2w2yqubKy8ZtQwFw5dDKebY\nmiqOpXLInRHFJFjJbrdqGROkMnZscIjXZ7tLFZypaWarmNPv9Z4EyJrl7caEDvyC\nPOwBsRLCxQKBgE4bJiHRBZjowI+BaY2mCBtB8tgyn9umZ60mmG0iNkuE6NV5BqQR\nTu0NvRrizGVidpQwppZ1SA85BbCs9eK6ek1kJZYE0SblqRvfBU+V9WhXmr7X0Rve\nd0gmj4FUZxMJXWS+AzbMm0v8I+kZKgatRvNSaVYUD7ytQtCd3LFw8pkhAoGAHWBr\niJ8DWutW4RZWktlelCC6AGO7kvOPYIMy/qF3x9cS/IMetCP+8wa52cn3EZFwLN6r\n9FLsujYDV4YV6HmgdPC9U5rmV2LIjiksEtAEeoZeoZKUIbQBcbc+ZDIX1IVTFvrn\nTAR0tiAB77hGYTjCFaqu24QKLali7DkVbAc2apUCgYEA48Fb2EDxeZKYbPhzbOg1\n0rU0K+Z7BYli29lsLcFNs0MLFROcOCudL9AZQV7/f1BFPIyXk/jPyIhcSfO4zj7s\n3A5oEEww/JdNt/r7Ik2Qj4HV54AR11NHzLAnZh19sTTCyQWYQzgqM23DeHjsvEpF\nA0VDWADdYDVskl0t1GkX8/E=\n-----END PRIVATE KEY-----\n",
+  "private_key_id": "23756c5a6da23e322e4bb09a48d7f2d02b8c2bcf",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCZHg0pEoILLgTH\nbAA2J2p3VvLre+C5sB1zZHCh7ZHjW03vl5xMm97DJ0q6UKjn0pTE8+sxGVDkVHG7\nKUL0jEiDlvr+VjmoRi3SvJtQrN1kghk3qrI1i6eaEzi7GfLHNQIZ+ox5d3U5EZOy\nykBEMdKxQpeLWMkZxLRrbAQLCzc6hPdHljThYCgrZcDumWLAy+ayeI1SXZI9jiiR\ne8uKvCUEYHN28P1nxQIIvcF79+vduldl9djIN29SGLoTFMScAVc+fHWj7uwcQaMm\nsvV0AtOgLZwoOFsQvXaZMIfyuhsuSareO4r2PNgxcRHIiIe4HAPPWv4+TU5J5K3P\nT1vQnh9hAgMBAAECggEAIY0++4LJebssA2nkUvmIoB1urhCvUekoTu6Rqr3046HQ\nfmGVt4jJQ7CytIhztpbDkDPV0+S0/8+MO2OjfxRVWHZnSf+pczjrlhvLmd5DRiCm\n93aBRe/z+jRfkEozk5jHPNuU2BIH3wk9uOYONpNHVJ3fuMJsEKg0k7xv116uC7Wb\n9DQ+dwin8q6J82osE3RFvO8w84fQHR9EPoImFgrgcij29XQ0GpCpdqNEC20bjyAB\nF3Os+DITKwa8AQ09CXUsACHieQugPCZlv99sYZDcSfIDysiFFdu8r/XjxCoLkFKY\nXlbr38igN7Lqz2RSWrtKzdBqnIORn0NQnbN0OzwnBQKBgQDJ2dSkLp7vNLy0CPeF\nVIziauXF1RKLZXyiFp4feNdVovId4lFmkG1mbdNyhJ5v2fI/OSzJixauai2Nu0G8\nzs6jPTyZwXP6GCdGd9BRFgU5HJaCr83gPP/VX6fYdkASyqIhpn6W5uTFJrcIfg5K\njuE0SQn+0+B0tJwHGp/4eTSV7QKBgQDCMW6/9JlIabdnFyAAAPTXnKfJA5sHZdWz\n0QAX2oaX7ldSot5EBQERuMU1YuuIGxalnDDi2nndksk+oLiPqoo1hXlfstQgLUwf\nJo8+7ASVzo7dKtkM2FWN3uYa4DJANwOuedr6YnfoZTu0gxrlB++2RGv4aCB4brRG\njNL4funAxQKBgERaeLC0fOvCLxjEZJWJAUB3NKIeum3sCx2UjS1ZLYp5aIYIKsqR\npAporI7+K+zyoB8azHjfmemsWQrC28sFOWJ8DTaAFTce0MYDMs8SpuglLy7IO+5w\nma32+47I1H/IkMjWac3OGLBOoPLGRS6oXcjn5vOdakf7FU8ui/eHi/AtAoGAR9x7\nG1Wsk3trfx6znMy9zjwOaviGmgo5Nr2Uxz76p6ZvcgkLLyia6K/zanocptU/YDGY\ndZpbln8HMcHQCnoVgxDNhXhrvyyECtL+F07Hs5gojfeZMoOrxUBC7pcggVraZep5\n+kYOEVXE7lvFzBNPxac0PUxrF6X/2EusloCAh/ECgYBrJ7ojIEtsQhxX8I9KqJcY\nIrDCVvkvpPbNdtjwybn0HtUm1z+E4W549JKCHxaZb3cTmGYBh47vo7K/nLMfDig8\nozs+iaeGcJPZtJJH57SoMPVFMDtZyRPgi2DASk8QcIgqOVIE5VXPPdDp+FXJC325\nvb79c90/chOibIt73bi5uA==\n-----END PRIVATE KEY-----\n",
   "client_email": "firebase-adminsdk-fbsvc@nampung.iam.gserviceaccount.com",
   "client_id": "105465652603290327209",
   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -21,7 +22,7 @@ const serviceAccount = {
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40nampung.iam.gserviceaccount.com",
   "universe_domain": "googleapis.com"
-};
+  }
 
 // ===== INIT FIREBASE =====
 admin.initializeApp({
