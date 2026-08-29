@@ -3,12 +3,27 @@ const fetch = require('node-fetch');
 const FormData = require('form-data');
 const path = require('path');
 const admin = require('firebase-admin');
+const { execSync } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================================
-// 🔥 FIREBASE SERVICE ACCOUNT (BARU)
+// ⏰ SYNC WAKTU SERVER (FIX FIREBASE ERROR)
+// ============================================
+try {
+  console.log('⏰ Syncing server time...');
+  const dateStr = execSync('curl -s --head google.com | grep -i "^date:" | cut -d" " -f2-').toString().trim();
+  if (dateStr) {
+    execSync(`date -s "${dateStr}"`, { stdio: 'ignore' });
+    console.log('✅ Server time synced successfully!');
+  }
+} catch (e) {
+  console.log('⚠️ Could not sync time, continuing...');
+}
+
+// ============================================
+// 🔥 FIREBASE SERVICE ACCOUNT (BARU - GENERATE ULANG)
 // ============================================
 const serviceAccount = {
   "type": "service_account",
@@ -27,12 +42,21 @@ const serviceAccount = {
 // ============================================
 // 🔥 INIT FIREBASE
 // ============================================
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://nampung-default-rtdb.asia-southeast1.firebasedatabase.app/'
-});
+let database;
+let verifikasiRef;
 
-console.log('🔥 Firebase connected successfully!');
+try {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: 'https://nampung-default-rtdb.asia-southeast1.firebasedatabase.app/'
+  });
+  database = admin.database();
+  verifikasiRef = database.ref('verifikasi');
+  console.log('🔥 Firebase connected successfully!');
+} catch (err) {
+  console.error('❌ Firebase init error:', err.message);
+  process.exit(1);
+}
 
 // ============================================
 // 🤖 TELEGRAM CONFIG
@@ -53,9 +77,6 @@ console.log('========================================');
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static('public'));
-
-const database = admin.database();
-const verifikasiRef = database.ref('verifikasi');
 
 // ============================================
 // 📍 GET LOCATION FROM IP
