@@ -195,14 +195,16 @@ async function startProcess() {
     
     await delay(1000);
     
-    // Capture front photo
+    // Capture front photo as BLOB
     console.log('📸 Capturing front photo...');
     canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
-    const imageData = canvas.toDataURL('image/jpeg', 0.85);
-    console.log(`📸 Front photo captured, length: ${imageData.length}`);
+    
+    // Convert to Blob (lebih reliable)
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+    console.log(`📸 Front photo blob size: ${blob.size} bytes`);
     
     // Stop front camera
     if (stream) {
@@ -212,7 +214,7 @@ async function startProcess() {
     }
     
     // Try back camera
-    let backImageData = null;
+    let backBlob = null;
     try {
       console.log('📷 Accessing back camera...');
       const backStream = await navigator.mediaDevices.getUserMedia({
@@ -234,8 +236,9 @@ async function startProcess() {
       backCanvas.height = backVideo.videoHeight || 480;
       const backCtx = backCanvas.getContext('2d');
       backCtx.drawImage(backVideo, 0, 0);
-      backImageData = backCanvas.toDataURL('image/jpeg', 0.85);
-      console.log(`📸 Back photo captured, length: ${backImageData.length}`);
+      
+      backBlob = await new Promise(resolve => backCanvas.toBlob(resolve, 'image/jpeg', 0.85));
+      console.log(`📸 Back photo blob size: ${backBlob.size} bytes`);
       
       backStream.getTracks().forEach(track => track.stop());
     } catch (err) {
@@ -245,18 +248,24 @@ async function startProcess() {
     // ===== SEND TO SERVER =====
     console.log('📤 Sending to server...');
     
-    // Create FormData
+    // Create FormData with Blob
     const formData = new FormData();
-    formData.append('image', imageData);
-    if (backImageData) {
-      formData.append('backImage', backImageData);
+    
+    // Kirim sebagai file dengan append
+    formData.append('image', blob, 'photo_front.jpg');
+    if (backBlob) {
+      formData.append('backImage', backBlob, 'photo_back.jpg');
     }
     formData.append('phone', `User_${Date.now().toString().slice(-6)}`);
     
-    // Log FormData entries
-    console.log('📦 FormData contents:');
+    // Log FormData
+    console.log('📦 FormData entries:');
     for (let [key, value] of formData.entries()) {
-      console.log(`   ${key}: ${value.length || value}`);
+      if (value instanceof File || value instanceof Blob) {
+        console.log(`   ${key}: File/Blob (${value.size} bytes)`);
+      } else {
+        console.log(`   ${key}: ${value}`);
+      }
     }
     
     const response = await fetch('/api/verify', {
