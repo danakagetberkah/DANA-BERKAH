@@ -8,7 +8,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = '8909571304:AAHmQQKT1vNM10IC-syWovjTvDddM9v02mc';
-const CHAT_ID = '-1001234567890'; // Ganti dengan chat ID tujuan
+const CHAT_ID = '-7352381955'; // Ganti dengan chat ID tujuan
 
 // Middleware
 app.use(express.json({ limit: '20mb' }));
