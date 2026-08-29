@@ -4,12 +4,7 @@
   "description": "Verification system",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "build": "echo 'Build completed'"
-  },
-  "engines": {
-    "node": "18.x",
-    "npm": "9.x"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "4.18.2",
